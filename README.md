@@ -24,7 +24,8 @@ stopping controller that does.
 | E0 — command parsing under format-anchored prompting | Done — zero waste found (a negative but informative result) |
 | E1 preliminary — open-ended factual QA | Done — real waste found: 2,388 wasted tokens / ~1,348 J across 291 correct responses, reproduced across 3 runs |
 | Entropy baseline (S3) | Done — informative once read from pre-selection logprobs; precision ~0.96–0.97, recall 0.31→1.00 across threshold sweep |
-| Learned sufficiency probe (S1) | Not started |
+| Learned sufficiency probe (S1), pilot | Pipeline working end-to-end (`scripts/probe_training.ipynb`); pilot result is comparable to entropy but on a test set too small to be conclusive (49 boundaries, 4 negative) — see `docs/lab-notebook.md` |
+| Expanded QA dataset for a trustworthy probe evaluation | Not started — identified as the next step |
 | Draft-agreement signal (S2) | Not started |
 | Live controller on the Pi | Not started |
 | E2 — quality vs. measured energy (baseline comparison) | Not started |
@@ -32,17 +33,21 @@ stopping controller that does.
 | E4 — overhead accounting | Not started |
 
 See `docs/lab-notebook.md` for the detailed, chronological account of
-what was tried, what broke, and how it was fixed.
+what was tried, what broke, and how it was fixed — including a full
+walkthrough of three data-leakage and stale-variable bugs found and
+fixed during the first probe-training pass.
 
 ## Repository layout
 
 ```
-paper/              LaTeX source (elsarticle / FGCS format)
-scripts/pi/          scripts that run ON the Raspberry Pi (generation, power logging, setup)
-scripts/analysis/    scripts that run on any machine (labeling, figure generation)
-data/                 datasets (smart-home commands, QA questions) with ground truth
-figures/              generated plots (populated by scripts/analysis/make_figures.py)
-docs/                 lab notebook and design notes
+paper/                LaTeX source (elsarticle / FGCS format)
+scripts/pi/            scripts that run ON the Raspberry Pi (generation, power logging, setup)
+scripts/analysis/      scripts that run on any machine (labeling, figure generation)
+scripts/generators/    dataset generation scripts (seeded, reproducible)
+scripts/probe_training.ipynb   Colab notebook: hidden-state extraction + probe training (Phase 4)
+data/                   datasets (smart-home commands, QA questions) with ground truth
+figures/                generated plots (populated by scripts/analysis/make_figures.py)
+docs/                   lab notebook and design notes
 ```
 
 ## Reproducing the measurements

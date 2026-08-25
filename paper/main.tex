@@ -468,12 +468,17 @@ The command task left the model no room to elaborate, so we repeated the
 measurement on a task that does: 304 short-form factual questions (world
 capitals, historical dates, basic science, and similar), each with a list
 of acceptable answer strings, answered under an open system prompt that
-only asked for a clear and correct answer. Of the 304 responses, 291
+only asked for a clear and correct answer. Response length varied
+considerably across the set (Figure~\ref{fig:length-hist}), from single
+short factual replies to answers running well past the point of
+diminishing returns. Of the 304 responses, 291
 (95.7\%) contained the correct answer. Here the picture was different.
 Correct responses ran on for an average of 8.2 tokens (as many as 155 in
 one case) past the point where the answer was already given, adding up to
 2{,}388 wasted tokens and roughly 1{,}348\,J across the 291 correct
-responses. We repeated the run three times at temperature 0 and the token
+responses -- a sharp contrast with the command-parsing task, where the
+same measurement gave zero (Figure~\ref{fig:waste-comparison}). We
+repeated the run three times at temperature 0 and the token
 counts matched exactly across all 304 questions each time; the energy
 totals agreed to within about 1\,J. So the waste is real, it is
 repeatable, and it is worth building something to catch it.

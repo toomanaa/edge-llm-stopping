@@ -145,3 +145,99 @@ signal.
   confirmations rather than bare tool calls), since the current E0 result
   shows the *rigid* version of that task doesn't need this system, but
   says nothing about a more natural version of the same task.
+
+## Verification pass (re-checking E0 and E1 before building on them)
+
+Before starting probe work, re-ran both labelers fresh against the
+existing result files on the Pi (`out/gen.jsonl` for E0,
+`out/qa_gen_run3.jsonl` for E1) and diffed the output against the numbers
+already written into the paper. Both matched exactly, digit for digit:
+E0 — 198/333 correct, 0.0 avg tokens wasted; E1 — 291/304 correct, 8.2 avg
+wasted tokens (max 155), 2,388 total, 1,348.24 J, and the full entropy
+threshold sweep. No drift, no stale numbers. This was a useful check to
+do before trusting either result as a foundation for new work.
+
+Also found and fixed a real gap in the paper draft during this pass:
+Figures 1 and 2 (the response-length histogram and the E0-vs-E1 waste
+comparison) had `\label{}`s and appeared in the PDF, but were never
+referenced by name anywhere in the prose -- only Figures 3 and 4
+(entropy ROC and entropy trace) had inline `Figure~\ref{}` mentions.
+Fixed by adding one sentence near each figure's natural place in the
+text. Worth remembering as a general check before submission: every
+figure needs at least one explicit textual pointer, not just a caption.
+
+## Probe training: first pass (Colab)
+
+Built a Colab notebook (`probe_training.ipynb`, not yet added to this
+repo) to test whether a learned probe on the model's hidden states can
+predict safe-stop boundaries better than the entropy baseline from
+Section 6.3. Loads Llama-3.2-1B-Instruct in full precision (needed for
+hidden-state access, which the Pi's quantized GGUF build doesn't expose),
+replays the 304 QA responses from `qa_gen_run3.jsonl`, extracts the
+final-layer hidden state at each sentence boundary, and trains a small
+MLP (one 64-unit hidden layer, ~131K parameters) to predict the same
+safe-stop label used throughout E1.
+
+**First run: precision/recall came back suspiciously perfect** (near 1.0
+precision across nearly the full recall range). Traced this to **data
+leakage in the train/test split**: the split was done at the boundary
+level (`train_test_split` on all ~450 boundaries), but a single response
+can contribute several boundaries that share nearly identical text and
+hidden states. When boundaries from the same response landed on both
+sides of the split, the probe could partly recognize "I have seen this
+response before" rather than learning a general pattern. Fixed by
+grouping boundaries by response id first, then splitting on the group,
+so every boundary from a given response stays entirely in train or
+entirely in test.
+
+**Second run, same near-perfect curve.** Investigated and found the fix
+had not actually taken effect -- the notebook's cells had been edited
+and re-run out of order in the browser, so an old cell was still
+supplying a stale, ungrouped split. This surfaced a second, real problem
+once the fix was confirmed applied: even with grouping correct, the test
+set was 92/96 (96%) positive. Most responses in this dataset are a
+single sentence, which is trivially "safe to stop" by definition -- there
+is no real decision being tested at those boundaries. Added a second
+filter, keeping only boundaries from responses with two or more sentence
+boundaries (the same "genuine decision point" filter used earlier when
+characterizing the entropy baseline on the Pi).
+
+**Third run hit a `ValueError: Found input variables with inconsistent
+numbers of samples: [37, 96]`.** `X_test_s` and `y_test` had been
+computed in different, out-of-order cell executions and no longer
+matched. Root cause was purely a Jupyter/Colab hazard, not a logic bug:
+editing cells in place and re-running them individually, rather than
+top-to-bottom, leaves stale variables from earlier runs sitting in
+memory. Fixed at the process level by using Runtime > Restart runtime
+followed by Runtime > Run all, and fixed at the notebook level by
+merging the split, hard-boundary filter, and training into a single
+cell with an explicit `assert X_test.shape[0] == y_test.shape[0]` guard,
+plus a matching assert before evaluation, so a stale-variable bug now
+fails loudly and immediately instead of producing a silently wrong
+number three cells later.
+
+**Fourth run, clean.** train (hard only): 168 boundaries; test (hard
+only): 49 boundaries; test set positives: 45/49. The probe's
+precision-recall curve sat at or slightly above the entropy baseline
+across most of the range, with a dip to about 0.93 precision near
+recall 1.0 -- a believable, imperfect shape, unlike the earlier flat 1.0
+lines that turned out to be leakage artifacts.
+
+**Honest reading of this result.** With only 4 negative examples in the
+test set, this is not strong evidence the probe beats entropy -- it is
+evidence the probe is *not worse*, on a sample too small to say more.
+The dataset's structure is the limiting factor: genuinely unsafe
+boundaries (where stopping mid-answer would be wrong) are rare in this
+304-question set, because most answers are single, clean sentences. The
+pipeline itself (hidden-state extraction, grouped splitting,
+hard-boundary filtering, training, evaluation, and comparison against a
+real baseline) is now working correctly end to end, which was the actual
+goal of this pass. The number it currently produces is a pilot, not a
+result to report as a system-level claim.
+
+**Next step identified, not yet started:** expand the QA dataset,
+roughly 3-4x, with a deliberate mix of short factual questions (more of
+the existing style) and "explain" / "why" questions that naturally
+provoke longer, multi-sentence answers -- since that is specifically
+where genuine stop-or-continue decisions occur, and where the current
+dataset is thin.
