@@ -1,0 +1,333 @@
+{"utterance": "Could you dim the bedroom lights to 25% thanks", "ground_truth": "dim(bedroom, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0000"}
+{"utterance": "Hey can you open the blinds in the hallway", "ground_truth": "blinds_open(hallway)", "family": "blinds", "has_correction": false, "id": "cmd_0001"}
+{"utterance": "Hey, dim the living room lights to 20% right now", "ground_truth": "dim(living_room, 20)", "family": "lights_dim", "has_correction": false, "id": "cmd_0002"}
+{"utterance": "Set the heat to 22... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0003"}
+{"utterance": "Turn off the bedroom lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(bedroom, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0004"}
+{"utterance": "Set the living room lights to 70 percent", "ground_truth": "dim(living_room, 70)", "family": "lights_dim", "has_correction": false, "id": "cmd_0005"}
+{"utterance": "Could you make it 22 degrees in here", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": false, "id": "cmd_0006"}
+{"utterance": "Set the heat to 20... no hold on, make it 22 degrees", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": true, "id": "cmd_0007"}
+{"utterance": "Set the heat to 23... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0008"}
+{"utterance": "Set the heat to 21... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0009"}
+{"utterance": "Set the speaker volume to 3", "ground_truth": "set_volume(3)", "family": "media", "has_correction": false, "id": "cmd_0010"}
+{"utterance": "Hey can you dim the office lights to 10%", "ground_truth": "dim(office, 10)", "family": "lights_dim", "has_correction": false, "id": "cmd_0011"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(living_room, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0012"}
+{"utterance": "I want the living room at 90% brightness", "ground_truth": "dim(living_room, 90)", "family": "lights_dim", "has_correction": false, "id": "cmd_0013"}
+{"utterance": "Set a timer for 15 minutes", "ground_truth": "set_timer(15)", "family": "timers", "has_correction": false, "id": "cmd_0014"}
+{"utterance": "Set the kitchen lights to 65 percent", "ground_truth": "dim(kitchen, 65)", "family": "lights_dim", "has_correction": false, "id": "cmd_0015"}
+{"utterance": "Start a 35 minute timer", "ground_truth": "set_timer(35)", "family": "timers", "has_correction": false, "id": "cmd_0016"}
+{"utterance": "Set the hallway lights to 55 percent", "ground_truth": "dim(hallway, 55)", "family": "lights_dim", "has_correction": false, "id": "cmd_0017"}
+{"utterance": "Put the office fan on high", "ground_truth": "fan(office, high)", "family": "fan", "has_correction": false, "id": "cmd_0018"}
+{"utterance": "Set the office fan to high", "ground_truth": "fan(office, high)", "family": "fan", "has_correction": false, "id": "cmd_0019"}
+{"utterance": "Could you set the thermostat to 22 degrees", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": false, "id": "cmd_0020"}
+{"utterance": "Lights in the living room down to 55%", "ground_truth": "dim(living_room, 55)", "family": "lights_dim", "has_correction": false, "id": "cmd_0021"}
+{"utterance": "Set the office lights to 35 percent", "ground_truth": "dim(office, 35)", "family": "lights_dim", "has_correction": false, "id": "cmd_0022"}
+{"utterance": "Set the heat to 18... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0023"}
+{"utterance": "Is the garage locked? if not lock it", "ground_truth": "lock(garage)", "family": "locks", "has_correction": false, "id": "cmd_0024"}
+{"utterance": "Set the heat to 21... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0025"}
+{"utterance": "Set the bathroom lights to 90 percent", "ground_truth": "dim(bathroom, 90)", "family": "lights_dim", "has_correction": false, "id": "cmd_0026"}
+{"utterance": "Can you turn on the bedroom lights please", "ground_truth": "lights_on(bedroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0027"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(living_room, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0028"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 30%, the kids are still reading", "ground_truth": "dim(bathroom, 30)", "family": "lights_dim", "has_correction": true, "id": "cmd_0029"}
+{"utterance": "I want the office at 90% brightness", "ground_truth": "dim(office, 90)", "family": "lights_dim", "has_correction": false, "id": "cmd_0030"}
+{"utterance": "Um, set the thermostat to 24 degrees", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": false, "id": "cmd_0031"}
+{"utterance": "Hey, set a timer for 10 minutes", "ground_truth": "set_timer(10)", "family": "timers", "has_correction": false, "id": "cmd_0032"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(office, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0033"}
+{"utterance": "Set the heat to 23... no hold on, make it 24 degrees", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": true, "id": "cmd_0034"}
+{"utterance": "Set the heat to 19... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0035"}
+{"utterance": "Please make it 26 degrees in here", "ground_truth": "set_temp(26)", "family": "thermostat", "has_correction": false, "id": "cmd_0036"}
+{"utterance": "Lights in the hallway down to 45%", "ground_truth": "dim(hallway, 45)", "family": "lights_dim", "has_correction": false, "id": "cmd_0037"}
+{"utterance": "Could you dim the bedroom lights to 30% right now", "ground_truth": "dim(bedroom, 30)", "family": "lights_dim", "has_correction": false, "id": "cmd_0038"}
+{"utterance": "Volume 4", "ground_truth": "set_volume(4)", "family": "media", "has_correction": false, "id": "cmd_0039"}
+{"utterance": "Um, turn off the hallway lights thanks", "ground_truth": "lights_off(hallway)", "family": "lights_switch", "has_correction": false, "id": "cmd_0040"}
+{"utterance": "Can you set the thermostat to 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": false, "id": "cmd_0041"}
+{"utterance": "Um, turn on the office lights thanks", "ground_truth": "lights_on(office)", "family": "lights_switch", "has_correction": false, "id": "cmd_0042"}
+{"utterance": "Set the heat to 18... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0043"}
+{"utterance": "Hey can you make it 18 degrees in here", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": false, "id": "cmd_0044"}
+{"utterance": "Secure the back door", "ground_truth": "lock(back_door)", "family": "locks", "has_correction": false, "id": "cmd_0045"}
+{"utterance": "Set the office lights to 70 percent", "ground_truth": "dim(office, 70)", "family": "lights_dim", "has_correction": false, "id": "cmd_0046"}
+{"utterance": "Could you turn off the bedroom lights please", "ground_truth": "lights_off(bedroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0047"}
+{"utterance": "Set the heat to 20... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0048"}
+{"utterance": "Could you dim the hallway lights to 20% right now", "ground_truth": "dim(hallway, 20)", "family": "lights_dim", "has_correction": false, "id": "cmd_0049"}
+{"utterance": "Put the kitchen fan on low", "ground_truth": "fan(kitchen, low)", "family": "fan", "has_correction": false, "id": "cmd_0050"}
+{"utterance": "Remind me in 3 minutes", "ground_truth": "set_timer(3)", "family": "timers", "has_correction": false, "id": "cmd_0051"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 50%, the kids are still reading", "ground_truth": "dim(living_room, 50)", "family": "lights_dim", "has_correction": true, "id": "cmd_0052"}
+{"utterance": "Set the heat to 18... no hold on, make it 24 degrees", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": true, "id": "cmd_0053"}
+{"utterance": "Can you make it 20 degrees in here", "ground_truth": "set_temp(20)", "family": "thermostat", "has_correction": false, "id": "cmd_0054"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(kitchen, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0055"}
+{"utterance": "Set the speaker volume to 18", "ground_truth": "set_volume(18)", "family": "media", "has_correction": false, "id": "cmd_0056"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 30%, the kids are still reading", "ground_truth": "dim(office, 30)", "family": "lights_dim", "has_correction": true, "id": "cmd_0057"}
+{"utterance": "Set the heat to 22... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0058"}
+{"utterance": "Set the office fan to medium", "ground_truth": "fan(office, medium)", "family": "fan", "has_correction": false, "id": "cmd_0059"}
+{"utterance": "Please close the blinds in the office", "ground_truth": "blinds_close(office)", "family": "blinds", "has_correction": false, "id": "cmd_0060"}
+{"utterance": "Put the bathroom fan on high", "ground_truth": "fan(bathroom, high)", "family": "fan", "has_correction": false, "id": "cmd_0061"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(living_room, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0062"}
+{"utterance": "Lock the garage when you get a chance", "ground_truth": "lock(garage)", "family": "locks", "has_correction": false, "id": "cmd_0063"}
+{"utterance": "Set the heat to 23... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0064"}
+{"utterance": "I want the living room at 35% brightness", "ground_truth": "dim(living_room, 35)", "family": "lights_dim", "has_correction": false, "id": "cmd_0065"}
+{"utterance": "Hey, dim the hallway lights to 75%", "ground_truth": "dim(hallway, 75)", "family": "lights_dim", "has_correction": false, "id": "cmd_0066"}
+{"utterance": "Set the speaker volume to 5", "ground_truth": "set_volume(5)", "family": "media", "has_correction": false, "id": "cmd_0067"}
+{"utterance": "Set the heat to 20... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0068"}
+{"utterance": "Turn off the bedroom lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(bedroom, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0069"}
+{"utterance": "Lights in the living room down to 45%", "ground_truth": "dim(living_room, 45)", "family": "lights_dim", "has_correction": false, "id": "cmd_0070"}
+{"utterance": "Set the heat to 20... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0071"}
+{"utterance": "I want the bedroom at 55% brightness", "ground_truth": "dim(bedroom, 55)", "family": "lights_dim", "has_correction": false, "id": "cmd_0072"}
+{"utterance": "Put the hallway fan on high", "ground_truth": "fan(hallway, high)", "family": "fan", "has_correction": false, "id": "cmd_0073"}
+{"utterance": "Office lights on", "ground_truth": "lights_on(office)", "family": "lights_switch", "has_correction": false, "id": "cmd_0074"}
+{"utterance": "Turn off the kitchen lights for me", "ground_truth": "lights_off(kitchen)", "family": "lights_switch", "has_correction": false, "id": "cmd_0075"}
+{"utterance": "Start a 120 minute timer", "ground_truth": "set_timer(120)", "family": "timers", "has_correction": false, "id": "cmd_0076"}
+{"utterance": "Lights in the bathroom down to 35%", "ground_truth": "dim(bathroom, 35)", "family": "lights_dim", "has_correction": false, "id": "cmd_0077"}
+{"utterance": "Dim the kitchen lights to 20%", "ground_truth": "dim(kitchen, 20)", "family": "lights_dim", "has_correction": false, "id": "cmd_0078"}
+{"utterance": "Can you set the thermostat to 20 degrees", "ground_truth": "set_temp(20)", "family": "thermostat", "has_correction": false, "id": "cmd_0079"}
+{"utterance": "Please close the blinds in the bedroom", "ground_truth": "blinds_close(bedroom)", "family": "blinds", "has_correction": false, "id": "cmd_0080"}
+{"utterance": "Hey can you dim the office lights to 20% right now", "ground_truth": "dim(office, 20)", "family": "lights_dim", "has_correction": false, "id": "cmd_0081"}
+{"utterance": "Please dim the hallway lights to 10% for me", "ground_truth": "dim(hallway, 10)", "family": "lights_dim", "has_correction": false, "id": "cmd_0082"}
+{"utterance": "Dim the bedroom lights to 75% when you get a chance", "ground_truth": "dim(bedroom, 75)", "family": "lights_dim", "has_correction": false, "id": "cmd_0083"}
+{"utterance": "Could you set the thermostat to 25 degrees", "ground_truth": "set_temp(25)", "family": "thermostat", "has_correction": false, "id": "cmd_0084"}
+{"utterance": "Kitchen lights on", "ground_truth": "lights_on(kitchen)", "family": "lights_switch", "has_correction": false, "id": "cmd_0085"}
+{"utterance": "Please open the blinds in the bedroom", "ground_truth": "blinds_open(bedroom)", "family": "blinds", "has_correction": false, "id": "cmd_0086"}
+{"utterance": "Volume 11", "ground_truth": "set_volume(11)", "family": "media", "has_correction": false, "id": "cmd_0087"}
+{"utterance": "Could you close the blinds in the living room", "ground_truth": "blinds_close(living_room)", "family": "blinds", "has_correction": false, "id": "cmd_0088"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(office, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0089"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(bathroom, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0090"}
+{"utterance": "Remind me in 40 minutes", "ground_truth": "set_timer(40)", "family": "timers", "has_correction": false, "id": "cmd_0091"}
+{"utterance": "Please dim the hallway lights to 60%", "ground_truth": "dim(hallway, 60)", "family": "lights_dim", "has_correction": false, "id": "cmd_0092"}
+{"utterance": "Start a 75 minute timer", "ground_truth": "set_timer(75)", "family": "timers", "has_correction": false, "id": "cmd_0093"}
+{"utterance": "I want the living room at 85% brightness", "ground_truth": "dim(living_room, 85)", "family": "lights_dim", "has_correction": false, "id": "cmd_0094"}
+{"utterance": "Set the heat to 20... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0095"}
+{"utterance": "Set the speaker volume to 12", "ground_truth": "set_volume(12)", "family": "media", "has_correction": false, "id": "cmd_0096"}
+{"utterance": "I want the office at 65% brightness", "ground_truth": "dim(office, 65)", "family": "lights_dim", "has_correction": false, "id": "cmd_0097"}
+{"utterance": "Put the bathroom fan on low", "ground_truth": "fan(bathroom, low)", "family": "fan", "has_correction": false, "id": "cmd_0098"}
+{"utterance": "Turn off the hallway lights... actually wait, just dim them to 50%, the kids are still reading", "ground_truth": "dim(hallway, 50)", "family": "lights_dim", "has_correction": true, "id": "cmd_0099"}
+{"utterance": "Set the heat to 21... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0100"}
+{"utterance": "Set the living room fan to medium", "ground_truth": "fan(living_room, medium)", "family": "fan", "has_correction": false, "id": "cmd_0101"}
+{"utterance": "Hey can you dim the office lights to 25% when you get a chance", "ground_truth": "dim(office, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0102"}
+{"utterance": "Please dim the hallway lights to 80% please", "ground_truth": "dim(hallway, 80)", "family": "lights_dim", "has_correction": false, "id": "cmd_0103"}
+{"utterance": "Lights in the bedroom down to 45%", "ground_truth": "dim(bedroom, 45)", "family": "lights_dim", "has_correction": false, "id": "cmd_0104"}
+{"utterance": "Volume 2", "ground_truth": "set_volume(2)", "family": "media", "has_correction": false, "id": "cmd_0105"}
+{"utterance": "Secure the front door", "ground_truth": "lock(front_door)", "family": "locks", "has_correction": false, "id": "cmd_0106"}
+{"utterance": "Hey can you dim the office lights to 80% right now", "ground_truth": "dim(office, 80)", "family": "lights_dim", "has_correction": false, "id": "cmd_0107"}
+{"utterance": "Hey, turn off the bathroom lights please", "ground_truth": "lights_off(bathroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0108"}
+{"utterance": "Put the hallway fan on medium", "ground_truth": "fan(hallway, medium)", "family": "fan", "has_correction": false, "id": "cmd_0109"}
+{"utterance": "Set the bedroom fan to medium", "ground_truth": "fan(bedroom, medium)", "family": "fan", "has_correction": false, "id": "cmd_0110"}
+{"utterance": "Hey, close the blinds in the kitchen", "ground_truth": "blinds_close(kitchen)", "family": "blinds", "has_correction": false, "id": "cmd_0111"}
+{"utterance": "Hey, set the thermostat to 17 degrees", "ground_truth": "set_temp(17)", "family": "thermostat", "has_correction": false, "id": "cmd_0112"}
+{"utterance": "Can you dim the bathroom lights to 30% thanks", "ground_truth": "dim(bathroom, 30)", "family": "lights_dim", "has_correction": false, "id": "cmd_0113"}
+{"utterance": "Can you dim the bedroom lights to 60% right now", "ground_truth": "dim(bedroom, 60)", "family": "lights_dim", "has_correction": false, "id": "cmd_0114"}
+{"utterance": "Volume 8", "ground_truth": "set_volume(8)", "family": "media", "has_correction": false, "id": "cmd_0115"}
+{"utterance": "Put the office fan on medium", "ground_truth": "fan(office, medium)", "family": "fan", "has_correction": false, "id": "cmd_0116"}
+{"utterance": "Set the heat to 21... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0117"}
+{"utterance": "Can you dim the office lights to 60% for me", "ground_truth": "dim(office, 60)", "family": "lights_dim", "has_correction": false, "id": "cmd_0118"}
+{"utterance": "Set the heat to 20... no hold on, make it 24 degrees", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": true, "id": "cmd_0119"}
+{"utterance": "Hey can you dim the living room lights to 40% when you get a chance", "ground_truth": "dim(living_room, 40)", "family": "lights_dim", "has_correction": false, "id": "cmd_0120"}
+{"utterance": "Hey can you dim the living room lights to 10% please", "ground_truth": "dim(living_room, 10)", "family": "lights_dim", "has_correction": false, "id": "cmd_0121"}
+{"utterance": "Can you pause the music", "ground_truth": "music_pause()", "family": "media", "has_correction": false, "id": "cmd_0122"}
+{"utterance": "Set the heat to 20... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0123"}
+{"utterance": "Can you open the blinds in the kitchen", "ground_truth": "blinds_open(kitchen)", "family": "blinds", "has_correction": false, "id": "cmd_0124"}
+{"utterance": "Can you open the blinds in the office", "ground_truth": "blinds_open(office)", "family": "blinds", "has_correction": false, "id": "cmd_0125"}
+{"utterance": "Bring the bathroom lighting to 70%", "ground_truth": "dim(bathroom, 70)", "family": "lights_dim", "has_correction": false, "id": "cmd_0126"}
+{"utterance": "Dim the office lights to 50% please", "ground_truth": "dim(office, 50)", "family": "lights_dim", "has_correction": false, "id": "cmd_0127"}
+{"utterance": "Open the blinds in the living room", "ground_truth": "blinds_open(living_room)", "family": "blinds", "has_correction": false, "id": "cmd_0128"}
+{"utterance": "Lights in the kitchen down to 35%", "ground_truth": "dim(kitchen, 35)", "family": "lights_dim", "has_correction": false, "id": "cmd_0129"}
+{"utterance": "Volume 16", "ground_truth": "set_volume(16)", "family": "media", "has_correction": false, "id": "cmd_0130"}
+{"utterance": "Volume 9", "ground_truth": "set_volume(9)", "family": "media", "has_correction": false, "id": "cmd_0131"}
+{"utterance": "Is the back door locked? if not lock it", "ground_truth": "lock(back_door)", "family": "locks", "has_correction": false, "id": "cmd_0132"}
+{"utterance": "Can you dim the living room lights to 25% thanks", "ground_truth": "dim(living_room, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0133"}
+{"utterance": "Set the heat to 24... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0134"}
+{"utterance": "Turn off the bedroom lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(bedroom, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0135"}
+{"utterance": "Remind me in 2 minutes", "ground_truth": "set_timer(2)", "family": "timers", "has_correction": false, "id": "cmd_0136"}
+{"utterance": "Bring the bathroom lighting to 65%", "ground_truth": "dim(bathroom, 65)", "family": "lights_dim", "has_correction": false, "id": "cmd_0137"}
+{"utterance": "Remind me in 50 minutes", "ground_truth": "set_timer(50)", "family": "timers", "has_correction": false, "id": "cmd_0138"}
+{"utterance": "Please open the blinds in the bathroom", "ground_truth": "blinds_open(bathroom)", "family": "blinds", "has_correction": false, "id": "cmd_0139"}
+{"utterance": "Could you turn on the bathroom lights for me", "ground_truth": "lights_on(bathroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0140"}
+{"utterance": "Set the heat to 20... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0141"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(bathroom, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0142"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(office, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0143"}
+{"utterance": "I want the hallway at 85% brightness", "ground_truth": "dim(hallway, 85)", "family": "lights_dim", "has_correction": false, "id": "cmd_0144"}
+{"utterance": "Set the heat to 22... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0145"}
+{"utterance": "Put the bathroom fan on medium", "ground_truth": "fan(bathroom, medium)", "family": "fan", "has_correction": false, "id": "cmd_0146"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 30%, the kids are still reading", "ground_truth": "dim(living_room, 30)", "family": "lights_dim", "has_correction": true, "id": "cmd_0147"}
+{"utterance": "Turn off the hallway lights... actually wait, just dim them to 20%, the kids are still reading", "ground_truth": "dim(hallway, 20)", "family": "lights_dim", "has_correction": true, "id": "cmd_0148"}
+{"utterance": "Set the heat to 23... no hold on, make it 22 degrees", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": true, "id": "cmd_0149"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(bathroom, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0150"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 30%, the kids are still reading", "ground_truth": "dim(bathroom, 30)", "family": "lights_dim", "has_correction": true, "id": "cmd_0151"}
+{"utterance": "Hey, make it 17 degrees in here", "ground_truth": "set_temp(17)", "family": "thermostat", "has_correction": false, "id": "cmd_0152"}
+{"utterance": "Set the office lights to 55 percent", "ground_truth": "dim(office, 55)", "family": "lights_dim", "has_correction": false, "id": "cmd_0153"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(office, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0154"}
+{"utterance": "Put the hallway fan on low", "ground_truth": "fan(hallway, low)", "family": "fan", "has_correction": false, "id": "cmd_0155"}
+{"utterance": "Bring the kitchen lighting to 45%", "ground_truth": "dim(kitchen, 45)", "family": "lights_dim", "has_correction": false, "id": "cmd_0156"}
+{"utterance": "Unlock the front door right now", "ground_truth": "unlock(front_door)", "family": "locks", "has_correction": false, "id": "cmd_0157"}
+{"utterance": "Secure the garage", "ground_truth": "lock(garage)", "family": "locks", "has_correction": false, "id": "cmd_0158"}
+{"utterance": "Could you set a timer for 5 minutes", "ground_truth": "set_timer(5)", "family": "timers", "has_correction": false, "id": "cmd_0159"}
+{"utterance": "Hey can you lock the front door right now", "ground_truth": "lock(front_door)", "family": "locks", "has_correction": false, "id": "cmd_0160"}
+{"utterance": "Bring the hallway lighting to 35%", "ground_truth": "dim(hallway, 35)", "family": "lights_dim", "has_correction": false, "id": "cmd_0161"}
+{"utterance": "Hey, dim the living room lights to 80%", "ground_truth": "dim(living_room, 80)", "family": "lights_dim", "has_correction": false, "id": "cmd_0162"}
+{"utterance": "Set the heat to 19... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0163"}
+{"utterance": "Set the bedroom fan to low", "ground_truth": "fan(bedroom, low)", "family": "fan", "has_correction": false, "id": "cmd_0164"}
+{"utterance": "Switch on the lights in the bedroom", "ground_truth": "lights_on(bedroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0165"}
+{"utterance": "Can you stop the music", "ground_truth": "music_stop()", "family": "media", "has_correction": false, "id": "cmd_0166"}
+{"utterance": "Set the heat to 19... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0167"}
+{"utterance": "Set the heat to 18... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0168"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(kitchen, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0169"}
+{"utterance": "I want the kitchen at 85% brightness", "ground_truth": "dim(kitchen, 85)", "family": "lights_dim", "has_correction": false, "id": "cmd_0170"}
+{"utterance": "Please dim the bathroom lights to 40% thanks", "ground_truth": "dim(bathroom, 40)", "family": "lights_dim", "has_correction": false, "id": "cmd_0171"}
+{"utterance": "Can you turn off the living room lights please", "ground_truth": "lights_off(living_room)", "family": "lights_switch", "has_correction": false, "id": "cmd_0172"}
+{"utterance": "I want the living room at 15% brightness", "ground_truth": "dim(living_room, 15)", "family": "lights_dim", "has_correction": false, "id": "cmd_0173"}
+{"utterance": "Set the heat to 24... no hold on, make it 20 degrees", "ground_truth": "set_temp(20)", "family": "thermostat", "has_correction": true, "id": "cmd_0174"}
+{"utterance": "Set the office lights to 15 percent", "ground_truth": "dim(office, 15)", "family": "lights_dim", "has_correction": false, "id": "cmd_0175"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 10%, the kids are still reading", "ground_truth": "dim(kitchen, 10)", "family": "lights_dim", "has_correction": true, "id": "cmd_0176"}
+{"utterance": "Hey, dim the bathroom lights to 75%", "ground_truth": "dim(bathroom, 75)", "family": "lights_dim", "has_correction": false, "id": "cmd_0177"}
+{"utterance": "Set the heat to 24... no hold on, make it 20 degrees", "ground_truth": "set_temp(20)", "family": "thermostat", "has_correction": true, "id": "cmd_0178"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 75%, the kids are still reading", "ground_truth": "dim(living_room, 75)", "family": "lights_dim", "has_correction": true, "id": "cmd_0179"}
+{"utterance": "Hey, close the blinds in the bathroom", "ground_truth": "blinds_close(bathroom)", "family": "blinds", "has_correction": false, "id": "cmd_0180"}
+{"utterance": "Hey, set the thermostat to 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": false, "id": "cmd_0181"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 20%, the kids are still reading", "ground_truth": "dim(bathroom, 20)", "family": "lights_dim", "has_correction": true, "id": "cmd_0182"}
+{"utterance": "Set the speaker volume to 15", "ground_truth": "set_volume(15)", "family": "media", "has_correction": false, "id": "cmd_0183"}
+{"utterance": "Set the heat to 21... no hold on, make it 22 degrees", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": true, "id": "cmd_0184"}
+{"utterance": "Bring the bathroom lighting to 15%", "ground_truth": "dim(bathroom, 15)", "family": "lights_dim", "has_correction": false, "id": "cmd_0185"}
+{"utterance": "Um, dim the office lights to 40%", "ground_truth": "dim(office, 40)", "family": "lights_dim", "has_correction": false, "id": "cmd_0186"}
+{"utterance": "Set the heat to 20... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0187"}
+{"utterance": "Switch on the lights in the living room", "ground_truth": "lights_on(living_room)", "family": "lights_switch", "has_correction": false, "id": "cmd_0188"}
+{"utterance": "Set a timer for 90 minutes", "ground_truth": "set_timer(90)", "family": "timers", "has_correction": false, "id": "cmd_0189"}
+{"utterance": "Switch off the lights in the hallway", "ground_truth": "lights_off(hallway)", "family": "lights_switch", "has_correction": false, "id": "cmd_0190"}
+{"utterance": "Please dim the bedroom lights to 80% for me", "ground_truth": "dim(bedroom, 80)", "family": "lights_dim", "has_correction": false, "id": "cmd_0191"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 75%, the kids are still reading", "ground_truth": "dim(kitchen, 75)", "family": "lights_dim", "has_correction": true, "id": "cmd_0192"}
+{"utterance": "Um, dim the living room lights to 50% when you get a chance", "ground_truth": "dim(living_room, 50)", "family": "lights_dim", "has_correction": false, "id": "cmd_0193"}
+{"utterance": "Hey, dim the bedroom lights to 10% please", "ground_truth": "dim(bedroom, 10)", "family": "lights_dim", "has_correction": false, "id": "cmd_0194"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(living_room, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0195"}
+{"utterance": "Set the heat to 20... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0196"}
+{"utterance": "Unlock the garage thanks", "ground_truth": "unlock(garage)", "family": "locks", "has_correction": false, "id": "cmd_0197"}
+{"utterance": "Set the heat to 24... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0198"}
+{"utterance": "Hey can you set the thermostat to 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": false, "id": "cmd_0199"}
+{"utterance": "Set the heat to 22... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0200"}
+{"utterance": "Hey can you make it 19 degrees in here", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": false, "id": "cmd_0201"}
+{"utterance": "Turn off the living room lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(living_room, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0202"}
+{"utterance": "Can you dim the bathroom lights to 10% please", "ground_truth": "dim(bathroom, 10)", "family": "lights_dim", "has_correction": false, "id": "cmd_0203"}
+{"utterance": "Remind me in 12 minutes", "ground_truth": "set_timer(12)", "family": "timers", "has_correction": false, "id": "cmd_0204"}
+{"utterance": "Set the heat to 22... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0205"}
+{"utterance": "I want the bedroom at 85% brightness", "ground_truth": "dim(bedroom, 85)", "family": "lights_dim", "has_correction": false, "id": "cmd_0206"}
+{"utterance": "Could you dim the kitchen lights to 10% please", "ground_truth": "dim(kitchen, 10)", "family": "lights_dim", "has_correction": false, "id": "cmd_0207"}
+{"utterance": "Please dim the kitchen lights to 40% for me", "ground_truth": "dim(kitchen, 40)", "family": "lights_dim", "has_correction": false, "id": "cmd_0208"}
+{"utterance": "Put the kitchen fan on medium", "ground_truth": "fan(kitchen, medium)", "family": "fan", "has_correction": false, "id": "cmd_0209"}
+{"utterance": "Turn off the bedroom lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(bedroom, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0210"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 50%, the kids are still reading", "ground_truth": "dim(office, 50)", "family": "lights_dim", "has_correction": true, "id": "cmd_0211"}
+{"utterance": "Dim the living room lights to 30% thanks", "ground_truth": "dim(living_room, 30)", "family": "lights_dim", "has_correction": false, "id": "cmd_0212"}
+{"utterance": "Lights on in the bathroom", "ground_truth": "lights_on(bathroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0213"}
+{"utterance": "Set the heat to 19... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0214"}
+{"utterance": "Can you lock the back door", "ground_truth": "lock(back_door)", "family": "locks", "has_correction": false, "id": "cmd_0215"}
+{"utterance": "Switch on the lights in the hallway", "ground_truth": "lights_on(hallway)", "family": "lights_switch", "has_correction": false, "id": "cmd_0216"}
+{"utterance": "Set the heat to 23... no hold on, make it 24 degrees", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": true, "id": "cmd_0217"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(bathroom, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0218"}
+{"utterance": "Could you set a timer for 60 minutes", "ground_truth": "set_timer(60)", "family": "timers", "has_correction": false, "id": "cmd_0219"}
+{"utterance": "Hey can you dim the bedroom lights to 40%", "ground_truth": "dim(bedroom, 40)", "family": "lights_dim", "has_correction": false, "id": "cmd_0220"}
+{"utterance": "Could you turn on the hallway lights right now", "ground_truth": "lights_on(hallway)", "family": "lights_switch", "has_correction": false, "id": "cmd_0221"}
+{"utterance": "Turn off the hallway lights... actually wait, just dim them to 75%, the kids are still reading", "ground_truth": "dim(hallway, 75)", "family": "lights_dim", "has_correction": true, "id": "cmd_0222"}
+{"utterance": "Please dim the bathroom lights to 50% when you get a chance", "ground_truth": "dim(bathroom, 50)", "family": "lights_dim", "has_correction": false, "id": "cmd_0223"}
+{"utterance": "Dim the bathroom lights to 80% please", "ground_truth": "dim(bathroom, 80)", "family": "lights_dim", "has_correction": false, "id": "cmd_0224"}
+{"utterance": "Can you dim the kitchen lights to 30%", "ground_truth": "dim(kitchen, 30)", "family": "lights_dim", "has_correction": false, "id": "cmd_0225"}
+{"utterance": "Turn off the hallway lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(hallway, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0226"}
+{"utterance": "Lights in the office down to 45%", "ground_truth": "dim(office, 45)", "family": "lights_dim", "has_correction": false, "id": "cmd_0227"}
+{"utterance": "Turn off the hallway lights... actually wait, just dim them to 20%, the kids are still reading", "ground_truth": "dim(hallway, 20)", "family": "lights_dim", "has_correction": true, "id": "cmd_0228"}
+{"utterance": "Could you turn on the kitchen lights right now", "ground_truth": "lights_on(kitchen)", "family": "lights_switch", "has_correction": false, "id": "cmd_0229"}
+{"utterance": "Can you dim the kitchen lights to 25%", "ground_truth": "dim(kitchen, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0230"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(office, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0231"}
+{"utterance": "Put the office fan on low", "ground_truth": "fan(office, low)", "family": "fan", "has_correction": false, "id": "cmd_0232"}
+{"utterance": "Hey can you dim the living room lights to 75% thanks", "ground_truth": "dim(living_room, 75)", "family": "lights_dim", "has_correction": false, "id": "cmd_0233"}
+{"utterance": "Could you make it 25 degrees in here", "ground_truth": "set_temp(25)", "family": "thermostat", "has_correction": false, "id": "cmd_0234"}
+{"utterance": "Volume 6", "ground_truth": "set_volume(6)", "family": "media", "has_correction": false, "id": "cmd_0235"}
+{"utterance": "Set the hallway lights to 65 percent", "ground_truth": "dim(hallway, 65)", "family": "lights_dim", "has_correction": false, "id": "cmd_0236"}
+{"utterance": "Hey, make it 23 degrees in here", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": false, "id": "cmd_0237"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(kitchen, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0238"}
+{"utterance": "Set the kitchen lights to 70 percent", "ground_truth": "dim(kitchen, 70)", "family": "lights_dim", "has_correction": false, "id": "cmd_0239"}
+{"utterance": "Hey can you dim the hallway lights to 25% right now", "ground_truth": "dim(hallway, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0240"}
+{"utterance": "Set the heat to 22... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0241"}
+{"utterance": "Set the bedroom lights to 35 percent", "ground_truth": "dim(bedroom, 35)", "family": "lights_dim", "has_correction": false, "id": "cmd_0242"}
+{"utterance": "Hey, dim the kitchen lights to 75% right now", "ground_truth": "dim(kitchen, 75)", "family": "lights_dim", "has_correction": false, "id": "cmd_0243"}
+{"utterance": "Set the heat to 19... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0244"}
+{"utterance": "Could you dim the bathroom lights to 20%", "ground_truth": "dim(bathroom, 20)", "family": "lights_dim", "has_correction": false, "id": "cmd_0245"}
+{"utterance": "Can you dim the hallway lights to 30% when you get a chance", "ground_truth": "dim(hallway, 30)", "family": "lights_dim", "has_correction": false, "id": "cmd_0246"}
+{"utterance": "Set the heat to 19... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0247"}
+{"utterance": "Hey can you dim the bedroom lights to 20% right now", "ground_truth": "dim(bedroom, 20)", "family": "lights_dim", "has_correction": false, "id": "cmd_0248"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(office, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0249"}
+{"utterance": "Turn off the hallway lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(hallway, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0250"}
+{"utterance": "Can you set a timer for 45 minutes", "ground_truth": "set_timer(45)", "family": "timers", "has_correction": false, "id": "cmd_0251"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 50%, the kids are still reading", "ground_truth": "dim(bathroom, 50)", "family": "lights_dim", "has_correction": true, "id": "cmd_0252"}
+{"utterance": "Set the hallway lights to 70 percent", "ground_truth": "dim(hallway, 70)", "family": "lights_dim", "has_correction": false, "id": "cmd_0253"}
+{"utterance": "Set the heat to 23... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0254"}
+{"utterance": "I want the kitchen at 90% brightness", "ground_truth": "dim(kitchen, 90)", "family": "lights_dim", "has_correction": false, "id": "cmd_0255"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 20%, the kids are still reading", "ground_truth": "dim(kitchen, 20)", "family": "lights_dim", "has_correction": true, "id": "cmd_0256"}
+{"utterance": "Set the hallway lights to 90 percent", "ground_truth": "dim(hallway, 90)", "family": "lights_dim", "has_correction": false, "id": "cmd_0257"}
+{"utterance": "Could you dim the bedroom lights to 50% right now", "ground_truth": "dim(bedroom, 50)", "family": "lights_dim", "has_correction": false, "id": "cmd_0258"}
+{"utterance": "Remind me in 7 minutes", "ground_truth": "set_timer(7)", "family": "timers", "has_correction": false, "id": "cmd_0259"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 80%, the kids are still reading", "ground_truth": "dim(bathroom, 80)", "family": "lights_dim", "has_correction": true, "id": "cmd_0260"}
+{"utterance": "Dim the office lights to 75% for me", "ground_truth": "dim(office, 75)", "family": "lights_dim", "has_correction": false, "id": "cmd_0261"}
+{"utterance": "Set the speaker volume to 10", "ground_truth": "set_volume(10)", "family": "media", "has_correction": false, "id": "cmd_0262"}
+{"utterance": "Turn off the bedroom lights... actually wait, just dim them to 30%, the kids are still reading", "ground_truth": "dim(bedroom, 30)", "family": "lights_dim", "has_correction": true, "id": "cmd_0263"}
+{"utterance": "Set the heat to 18... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0264"}
+{"utterance": "Set the heat to 20... no hold on, make it 22 degrees", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": true, "id": "cmd_0265"}
+{"utterance": "Hey can you set the thermostat to 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": false, "id": "cmd_0266"}
+{"utterance": "Set the living room fan to high", "ground_truth": "fan(living_room, high)", "family": "fan", "has_correction": false, "id": "cmd_0267"}
+{"utterance": "Set the office lights to 85 percent", "ground_truth": "dim(office, 85)", "family": "lights_dim", "has_correction": false, "id": "cmd_0268"}
+{"utterance": "Switch off the lights in the living room", "ground_truth": "lights_off(living_room)", "family": "lights_switch", "has_correction": false, "id": "cmd_0269"}
+{"utterance": "Set the heat to 24... no hold on, make it 22 degrees", "ground_truth": "set_temp(22)", "family": "thermostat", "has_correction": true, "id": "cmd_0270"}
+{"utterance": "Set the heat to 24... no hold on, make it 23 degrees", "ground_truth": "set_temp(23)", "family": "thermostat", "has_correction": true, "id": "cmd_0271"}
+{"utterance": "Set the bedroom lights to 90 percent", "ground_truth": "dim(bedroom, 90)", "family": "lights_dim", "has_correction": false, "id": "cmd_0272"}
+{"utterance": "Lights in the bathroom down to 55%", "ground_truth": "dim(bathroom, 55)", "family": "lights_dim", "has_correction": false, "id": "cmd_0273"}
+{"utterance": "Set the office fan to low", "ground_truth": "fan(office, low)", "family": "fan", "has_correction": false, "id": "cmd_0274"}
+{"utterance": "Could you dim the kitchen lights to 50% when you get a chance", "ground_truth": "dim(kitchen, 50)", "family": "lights_dim", "has_correction": false, "id": "cmd_0275"}
+{"utterance": "Lights in the bedroom down to 70%", "ground_truth": "dim(bedroom, 70)", "family": "lights_dim", "has_correction": false, "id": "cmd_0276"}
+{"utterance": "Set the speaker volume to 7", "ground_truth": "set_volume(7)", "family": "media", "has_correction": false, "id": "cmd_0277"}
+{"utterance": "Um, make it 24 degrees in here", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": false, "id": "cmd_0278"}
+{"utterance": "Could you set a timer for 25 minutes", "ground_truth": "set_timer(25)", "family": "timers", "has_correction": false, "id": "cmd_0279"}
+{"utterance": "Volume 13", "ground_truth": "set_volume(13)", "family": "media", "has_correction": false, "id": "cmd_0280"}
+{"utterance": "Kill the kitchen lights", "ground_truth": "lights_off(kitchen)", "family": "lights_switch", "has_correction": false, "id": "cmd_0281"}
+{"utterance": "Um, dim the bathroom lights to 25%", "ground_truth": "dim(bathroom, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0282"}
+{"utterance": "Volume 14", "ground_truth": "set_volume(14)", "family": "media", "has_correction": false, "id": "cmd_0283"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(office, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0284"}
+{"utterance": "Please dim the bathroom lights to 60% when you get a chance", "ground_truth": "dim(bathroom, 60)", "family": "lights_dim", "has_correction": false, "id": "cmd_0285"}
+{"utterance": "Could you turn on the living room lights", "ground_truth": "lights_on(living_room)", "family": "lights_switch", "has_correction": false, "id": "cmd_0286"}
+{"utterance": "Put the kitchen fan on high", "ground_truth": "fan(kitchen, high)", "family": "fan", "has_correction": false, "id": "cmd_0287"}
+{"utterance": "Can you dim the kitchen lights to 60% for me", "ground_truth": "dim(kitchen, 60)", "family": "lights_dim", "has_correction": false, "id": "cmd_0288"}
+{"utterance": "Um, dim the living room lights to 60% when you get a chance", "ground_truth": "dim(living_room, 60)", "family": "lights_dim", "has_correction": false, "id": "cmd_0289"}
+{"utterance": "Set the hallway lights to 15 percent", "ground_truth": "dim(hallway, 15)", "family": "lights_dim", "has_correction": false, "id": "cmd_0290"}
+{"utterance": "Um, turn off the office lights right now", "ground_truth": "lights_off(office)", "family": "lights_switch", "has_correction": false, "id": "cmd_0291"}
+{"utterance": "Can you dim the kitchen lights to 80% right now", "ground_truth": "dim(kitchen, 80)", "family": "lights_dim", "has_correction": false, "id": "cmd_0292"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(bathroom, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0293"}
+{"utterance": "Set the heat to 18... no hold on, make it 21 degrees", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": true, "id": "cmd_0294"}
+{"utterance": "Set the kitchen lights to 15 percent", "ground_truth": "dim(kitchen, 15)", "family": "lights_dim", "has_correction": false, "id": "cmd_0295"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(kitchen, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0296"}
+{"utterance": "Office lights off", "ground_truth": "lights_off(office)", "family": "lights_switch", "has_correction": false, "id": "cmd_0297"}
+{"utterance": "Turn off the bedroom lights... actually wait, just dim them to 60%, the kids are still reading", "ground_truth": "dim(bedroom, 60)", "family": "lights_dim", "has_correction": true, "id": "cmd_0298"}
+{"utterance": "Set the kitchen fan to medium", "ground_truth": "fan(kitchen, medium)", "family": "fan", "has_correction": false, "id": "cmd_0299"}
+{"utterance": "Um, dim the hallway lights to 50% for me", "ground_truth": "dim(hallway, 50)", "family": "lights_dim", "has_correction": false, "id": "cmd_0300"}
+{"utterance": "Set the heat to 21... no hold on, make it 19 degrees", "ground_truth": "set_temp(19)", "family": "thermostat", "has_correction": true, "id": "cmd_0301"}
+{"utterance": "Could you set a timer for 20 minutes", "ground_truth": "set_timer(20)", "family": "timers", "has_correction": false, "id": "cmd_0302"}
+{"utterance": "Turn off the bathroom lights... actually wait, just dim them to 50%, the kids are still reading", "ground_truth": "dim(bathroom, 50)", "family": "lights_dim", "has_correction": true, "id": "cmd_0303"}
+{"utterance": "Please set the thermostat to 26 degrees", "ground_truth": "set_temp(26)", "family": "thermostat", "has_correction": false, "id": "cmd_0304"}
+{"utterance": "Lights in the bedroom down to 65%", "ground_truth": "dim(bedroom, 65)", "family": "lights_dim", "has_correction": false, "id": "cmd_0305"}
+{"utterance": "Can you make it 21 degrees in here", "ground_truth": "set_temp(21)", "family": "thermostat", "has_correction": false, "id": "cmd_0306"}
+{"utterance": "I want the kitchen at 55% brightness", "ground_truth": "dim(kitchen, 55)", "family": "lights_dim", "has_correction": false, "id": "cmd_0307"}
+{"utterance": "I want the bedroom at 15% brightness", "ground_truth": "dim(bedroom, 15)", "family": "lights_dim", "has_correction": false, "id": "cmd_0308"}
+{"utterance": "Set the kitchen fan to high", "ground_truth": "fan(kitchen, high)", "family": "fan", "has_correction": false, "id": "cmd_0309"}
+{"utterance": "Please close the blinds in the hallway", "ground_truth": "blinds_close(hallway)", "family": "blinds", "has_correction": false, "id": "cmd_0310"}
+{"utterance": "Set the speaker volume to 20", "ground_truth": "set_volume(20)", "family": "media", "has_correction": false, "id": "cmd_0311"}
+{"utterance": "Kill the bedroom lights", "ground_truth": "lights_off(bedroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0312"}
+{"utterance": "Hey, dim the office lights to 30%", "ground_truth": "dim(office, 30)", "family": "lights_dim", "has_correction": false, "id": "cmd_0313"}
+{"utterance": "Volume 1", "ground_truth": "set_volume(1)", "family": "media", "has_correction": false, "id": "cmd_0314"}
+{"utterance": "Set the heat to 21... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0315"}
+{"utterance": "Please set a timer for 30 minutes", "ground_truth": "set_timer(30)", "family": "timers", "has_correction": false, "id": "cmd_0316"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(kitchen, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0317"}
+{"utterance": "Play the music", "ground_truth": "music_play()", "family": "media", "has_correction": false, "id": "cmd_0318"}
+{"utterance": "Set the living room fan to low", "ground_truth": "fan(living_room, low)", "family": "fan", "has_correction": false, "id": "cmd_0319"}
+{"utterance": "Turn off the office lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(office, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0320"}
+{"utterance": "Bring the bathroom lighting to 45%", "ground_truth": "dim(bathroom, 45)", "family": "lights_dim", "has_correction": false, "id": "cmd_0321"}
+{"utterance": "I want the bathroom at 85% brightness", "ground_truth": "dim(bathroom, 85)", "family": "lights_dim", "has_correction": false, "id": "cmd_0322"}
+{"utterance": "Turn off the kitchen lights... actually wait, just dim them to 40%, the kids are still reading", "ground_truth": "dim(kitchen, 40)", "family": "lights_dim", "has_correction": true, "id": "cmd_0323"}
+{"utterance": "Kill the bathroom lights", "ground_truth": "lights_off(bathroom)", "family": "lights_switch", "has_correction": false, "id": "cmd_0324"}
+{"utterance": "Please unlock the back door please", "ground_truth": "unlock(back_door)", "family": "locks", "has_correction": false, "id": "cmd_0325"}
+{"utterance": "Set the kitchen fan to low", "ground_truth": "fan(kitchen, low)", "family": "fan", "has_correction": false, "id": "cmd_0326"}
+{"utterance": "Dim the hallway lights to 40% right now", "ground_truth": "dim(hallway, 40)", "family": "lights_dim", "has_correction": false, "id": "cmd_0327"}
+{"utterance": "Set the heat to 19... no hold on, make it 18 degrees", "ground_truth": "set_temp(18)", "family": "thermostat", "has_correction": true, "id": "cmd_0328"}
+{"utterance": "Lights in the living room down to 65%", "ground_truth": "dim(living_room, 65)", "family": "lights_dim", "has_correction": false, "id": "cmd_0329"}
+{"utterance": "Set the bedroom fan to high", "ground_truth": "fan(bedroom, high)", "family": "fan", "has_correction": false, "id": "cmd_0330"}
+{"utterance": "Set the heat to 19... no hold on, make it 24 degrees", "ground_truth": "set_temp(24)", "family": "thermostat", "has_correction": true, "id": "cmd_0331"}
+{"utterance": "Is the front door locked? if not lock it", "ground_truth": "lock(front_door)", "family": "locks", "has_correction": false, "id": "cmd_0332"}

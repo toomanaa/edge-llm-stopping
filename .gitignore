@@ -1,0 +1,24 @@
+# Model weights and build artifacts (too large / rebuildable)
+*.gguf
+llama.cpp/
+models/
+
+# Raw experiment outputs (large; keep summaries and labels, not full logs)
+out/*.jsonl
+out/*.csv
+!out/.gitkeep
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.spl
+paper/*.pdf
+
+# OS / editor
+.DS_Store
+__pycache__/
+*.pyc
+.vscode/

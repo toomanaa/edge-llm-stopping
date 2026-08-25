@@ -1,0 +1,304 @@
+{"question": "What is the largest city in Japan?", "answers": ["tokyo"], "id": "qa_0000"}
+{"question": "What is the capital of Thailand?", "answers": ["bangkok"], "id": "qa_0001"}
+{"question": "What is the study of living organisms called?", "answers": ["biology"], "id": "qa_0002"}
+{"question": "Who wrote The Old Man and the Sea?", "answers": ["hemingway", "ernest hemingway"], "id": "qa_0003"}
+{"question": "What is the capital of China?", "answers": ["beijing"], "id": "qa_0004"}
+{"question": "What is the unit of energy in the SI system?", "answers": ["joule"], "id": "qa_0005"}
+{"question": "In what country is Machu Picchu located?", "answers": ["peru"], "id": "qa_0006"}
+{"question": "Who painted the Sistine Chapel ceiling?", "answers": ["michelangelo"], "id": "qa_0007"}
+{"question": "In what year did World War I begin?", "answers": ["1914"], "id": "qa_0008"}
+{"question": "What is a group of lions called?", "answers": ["pride"], "id": "qa_0009"}
+{"question": "What is the fastest bird in the world?", "answers": ["peregrine falcon"], "id": "qa_0010"}
+{"question": "What is the capital of Canada?", "answers": ["ottawa"], "id": "qa_0011"}
+{"question": "What is the chemical symbol for potassium?", "answers": ["k"], "id": "qa_0012"}
+{"question": "What is the capital of Indonesia?", "answers": ["jakarta"], "id": "qa_0013"}
+{"question": "What is the largest fish in the world?", "answers": ["whale shark"], "id": "qa_0014"}
+{"question": "What is the currency of the United Kingdom?", "answers": ["pound", "pound sterling"], "id": "qa_0015"}
+{"question": "Who is the founder of Tesla and SpaceX?", "answers": ["elon musk", "musk"], "id": "qa_0016"}
+{"question": "What is the study of insects called?", "answers": ["entomology"], "id": "qa_0017"}
+{"question": "How many continents are there?", "answers": ["7", "seven"], "id": "qa_0018"}
+{"question": "What is the capital of Japan?", "answers": ["tokyo"], "id": "qa_0019"}
+{"question": "How many days are in a leap year?", "answers": ["366"], "id": "qa_0020"}
+{"question": "What is the center of an atom called?", "answers": ["nucleus"], "id": "qa_0021"}
+{"question": "What sport is known as the beautiful game?", "answers": ["soccer", "football"], "id": "qa_0022"}
+{"question": "What is the name of the Roman god of war?", "answers": ["mars"], "id": "qa_0023"}
+{"question": "What is the chemical symbol for iron?", "answers": ["fe"], "id": "qa_0024"}
+{"question": "Who wrote Wuthering Heights?", "answers": ["emily bronte", "emily bront\u00eb", "bronte"], "id": "qa_0025"}
+{"question": "What mountain range is home to Mount Everest?", "answers": ["himalayas"], "id": "qa_0026"}
+{"question": "What company created the Windows operating system?", "answers": ["microsoft"], "id": "qa_0027"}
+{"question": "What is the capital of Portugal?", "answers": ["lisbon"], "id": "qa_0028"}
+{"question": "What is the value of pi to two decimal places?", "answers": ["3.14"], "id": "qa_0029"}
+{"question": "What is the capital of Kuwait?", "answers": ["kuwait city"], "id": "qa_0030"}
+{"question": "What ship famously sank in 1912?", "answers": ["titanic"], "id": "qa_0031"}
+{"question": "What instrument measures earthquakes?", "answers": ["seismograph"], "id": "qa_0032"}
+{"question": "What is NATO short for?", "answers": ["north atlantic treaty organization"], "id": "qa_0033"}
+{"question": "What is the capital of Philippines?", "answers": ["manila"], "id": "qa_0034"}
+{"question": "Who wrote Romeo and Juliet?", "answers": ["shakespeare", "william shakespeare"], "id": "qa_0035"}
+{"question": "What is the unit of electrical current?", "answers": ["ampere", "amp"], "id": "qa_0036"}
+{"question": "What is the tallest animal in the world?", "answers": ["giraffe"], "id": "qa_0037"}
+{"question": "What does HTML stand for?", "answers": ["hypertext markup language"], "id": "qa_0038"}
+{"question": "What social media platform was founded by Mark Zuckerberg?", "answers": ["facebook"], "id": "qa_0039"}
+{"question": "Who wrote Moby-Dick?", "answers": ["melville", "herman melville"], "id": "qa_0040"}
+{"question": "What is the capital of India?", "answers": ["new delhi", "delhi"], "id": "qa_0041"}
+{"question": "What is the capital of Chile?", "answers": ["santiago"], "id": "qa_0042"}
+{"question": "How many strings does a standard guitar have?", "answers": ["6", "six"], "id": "qa_0043"}
+{"question": "What is the capital of Sweden?", "answers": ["stockholm"], "id": "qa_0044"}
+{"question": "What is the study of stars and space called?", "answers": ["astronomy"], "id": "qa_0045"}
+{"question": "What is the boiling point of water in Fahrenheit?", "answers": ["212"], "id": "qa_0046"}
+{"question": "What is the capital of France?", "answers": ["paris"], "id": "qa_0047"}
+{"question": "Who wrote The Adventures of Tom Sawyer?", "answers": ["mark twain", "twain"], "id": "qa_0048"}
+{"question": "Who wrote 1984?", "answers": ["george orwell", "orwell"], "id": "qa_0049"}
+{"question": "Who was the wife of King Henry VIII who was beheaded?", "answers": ["anne boleyn"], "id": "qa_0050"}
+{"question": "Who assassinated Abraham Lincoln?", "answers": ["john wilkes booth", "booth"], "id": "qa_0051"}
+{"question": "How long does Earth take to orbit the Sun?", "answers": ["365", "one year", "a year"], "id": "qa_0052"}
+{"question": "In what city is the Eiffel Tower located?", "answers": ["paris"], "id": "qa_0053"}
+{"question": "In what city was John F. Kennedy assassinated?", "answers": ["dallas"], "id": "qa_0054"}
+{"question": "Who wrote Hamlet?", "answers": ["shakespeare", "william shakespeare"], "id": "qa_0055"}
+{"question": "What is the capital of Switzerland?", "answers": ["bern"], "id": "qa_0056"}
+{"question": "How many chambers does the human heart have?", "answers": ["4", "four"], "id": "qa_0057"}
+{"question": "How many countries are in the European Union?", "answers": ["27", "twenty-seven"], "id": "qa_0058"}
+{"question": "What is the chemical symbol for lead?", "answers": ["pb"], "id": "qa_0059"}
+{"question": "What is the smallest country in the world?", "answers": ["vatican", "vatican city"], "id": "qa_0060"}
+{"question": "What planet has the most moons?", "answers": ["saturn", "jupiter"], "id": "qa_0061"}
+{"question": "In what city is the Colosseum located?", "answers": ["rome"], "id": "qa_0062"}
+{"question": "What is the largest desert in the world?", "answers": ["sahara", "antarctic", "antarctica"], "id": "qa_0063"}
+{"question": "What does CPU stand for?", "answers": ["central processing unit"], "id": "qa_0064"}
+{"question": "Who wrote The Odyssey?", "answers": ["homer"], "id": "qa_0065"}
+{"question": "Who invented the printing press?", "answers": ["gutenberg", "johannes gutenberg"], "id": "qa_0066"}
+{"question": "In what year did the Titanic sink?", "answers": ["1912"], "id": "qa_0067"}
+{"question": "What is the chemical symbol for oxygen?", "answers": ["o"], "id": "qa_0068"}
+{"question": "What is the largest state in the US by area?", "answers": ["alaska"], "id": "qa_0069"}
+{"question": "What number of protons does carbon have?", "answers": ["6", "six"], "id": "qa_0070"}
+{"question": "What is the name of the Egyptian god of the sun?", "answers": ["ra"], "id": "qa_0071"}
+{"question": "What wall divided Berlin during the Cold War?", "answers": ["berlin wall"], "id": "qa_0072"}
+{"question": "How many hours are in a day?", "answers": ["24", "twenty-four"], "id": "qa_0073"}
+{"question": "What is the largest ocean on Earth?", "answers": ["pacific"], "id": "qa_0074"}
+{"question": "What is the capital of Russia?", "answers": ["moscow"], "id": "qa_0075"}
+{"question": "What is the capital of Australia?", "answers": ["canberra"], "id": "qa_0076"}
+{"question": "How many players are on a basketball team on the court?", "answers": ["5", "five"], "id": "qa_0077"}
+{"question": "What language has the most native speakers in the world?", "answers": ["mandarin", "chinese"], "id": "qa_0078"}
+{"question": "What is the largest city in the United States?", "answers": ["new york", "new york city"], "id": "qa_0079"}
+{"question": "What is the chemical symbol for tin?", "answers": ["sn"], "id": "qa_0080"}
+{"question": "How many keys does a standard piano have?", "answers": ["88"], "id": "qa_0081"}
+{"question": "What is the chemical formula for water?", "answers": ["h2o"], "id": "qa_0082"}
+{"question": "What canal connects the Atlantic and Pacific oceans?", "answers": ["panama", "panama canal"], "id": "qa_0083"}
+{"question": "What is the chemical symbol for chlorine?", "answers": ["cl"], "id": "qa_0084"}
+{"question": "What is the capital of Germany?", "answers": ["berlin"], "id": "qa_0085"}
+{"question": "Who discovered America in 1492, according to tradition?", "answers": ["columbus", "christopher columbus"], "id": "qa_0086"}
+{"question": "What war was fought between the North and South in the US?", "answers": ["civil war", "american civil war"], "id": "qa_0087"}
+{"question": "Who wrote Animal Farm?", "answers": ["george orwell", "orwell"], "id": "qa_0088"}
+{"question": "What is the capital of Oman?", "answers": ["muscat"], "id": "qa_0089"}
+{"question": "What is the freezing point of water in Fahrenheit?", "answers": ["32"], "id": "qa_0090"}
+{"question": "What vitamin do you get primarily from sunlight?", "answers": ["vitamin d"], "id": "qa_0091"}
+{"question": "What is the capital of Jordan?", "answers": ["amman"], "id": "qa_0092"}
+{"question": "What blood cells fight infection?", "answers": ["white", "white blood cells", "leukocytes"], "id": "qa_0093"}
+{"question": "What natural satellite orbits the Earth?", "answers": ["the moon", "moon"], "id": "qa_0094"}
+{"question": "What is the currency of Japan?", "answers": ["yen"], "id": "qa_0095"}
+{"question": "Who wrote The Adventures of Huckleberry Finn?", "answers": ["mark twain", "twain"], "id": "qa_0096"}
+{"question": "What is the name of NASA's most famous space telescope?", "answers": ["hubble"], "id": "qa_0097"}
+{"question": "What is the largest artery in the human body?", "answers": ["aorta"], "id": "qa_0098"}
+{"question": "In what country is the Taj Mahal located?", "answers": ["india"], "id": "qa_0099"}
+{"question": "How many rings are on the Olympic flag?", "answers": ["5", "five"], "id": "qa_0100"}
+{"question": "What year was the first iPhone released?", "answers": ["2007"], "id": "qa_0101"}
+{"question": "What is the largest planet in our solar system?", "answers": ["jupiter"], "id": "qa_0102"}
+{"question": "What is the capital of Denmark?", "answers": ["copenhagen"], "id": "qa_0103"}
+{"question": "Who painted the Mona Lisa?", "answers": ["leonardo da vinci", "da vinci", "leonardo"], "id": "qa_0104"}
+{"question": "What is the chemical symbol for nitrogen?", "answers": ["n"], "id": "qa_0105"}
+{"question": "What strait separates Asia and North America?", "answers": ["bering", "bering strait"], "id": "qa_0106"}
+{"question": "What mountain range separates Europe and Asia?", "answers": ["ural", "urals"], "id": "qa_0107"}
+{"question": "What is the capital of Malaysia?", "answers": ["kuala lumpur"], "id": "qa_0108"}
+{"question": "What is the tallest mountain in the world?", "answers": ["everest", "mount everest"], "id": "qa_0109"}
+{"question": "What was the first man-made satellite launched into space?", "answers": ["sputnik"], "id": "qa_0110"}
+{"question": "What is the longest wall in the world?", "answers": ["great wall", "great wall of china"], "id": "qa_0111"}
+{"question": "Who was the first man in space?", "answers": ["yuri gagarin", "gagarin"], "id": "qa_0112"}
+{"question": "What organization is headquartered in New York and promotes world peace?", "answers": ["united nations", "un"], "id": "qa_0113"}
+{"question": "Who wrote The Alchemist?", "answers": ["paulo coelho", "coelho"], "id": "qa_0114"}
+{"question": "What is the capital of Iceland?", "answers": ["reykjavik", "reykjav\u00edk"], "id": "qa_0115"}
+{"question": "Who wrote Great Expectations?", "answers": ["dickens", "charles dickens"], "id": "qa_0116"}
+{"question": "What is the chemical symbol for hydrogen?", "answers": ["h"], "id": "qa_0117"}
+{"question": "What is the world's largest search engine?", "answers": ["google"], "id": "qa_0118"}
+{"question": "What language is spoken in Brazil?", "answers": ["portuguese"], "id": "qa_0119"}
+{"question": "What is the square root of 144?", "answers": ["12", "twelve"], "id": "qa_0120"}
+{"question": "What US state is known as the Sunshine State?", "answers": ["florida"], "id": "qa_0121"}
+{"question": "What is the chemical symbol for silver?", "answers": ["ag"], "id": "qa_0122"}
+{"question": "What is the capital of Morocco?", "answers": ["rabat"], "id": "qa_0123"}
+{"question": "What is the capital of Colombia?", "answers": ["bogota", "bogot\u00e1"], "id": "qa_0124"}
+{"question": "Who is known as the father of evolution?", "answers": ["darwin", "charles darwin"], "id": "qa_0125"}
+{"question": "Who wrote the theory of relativity's famous equation E=mc2?", "answers": ["einstein", "albert einstein"], "id": "qa_0126"}
+{"question": "What is the capital of Kenya?", "answers": ["nairobi"], "id": "qa_0127"}
+{"question": "What is the capital of Norway?", "answers": ["oslo"], "id": "qa_0128"}
+{"question": "What is the currency used in most of the European Union?", "answers": ["euro"], "id": "qa_0129"}
+{"question": "What is the chemical symbol for sodium?", "answers": ["na"], "id": "qa_0130"}
+{"question": "What is a group of wolves called?", "answers": ["pack"], "id": "qa_0131"}
+{"question": "What does WWW stand for?", "answers": ["world wide web"], "id": "qa_0132"}
+{"question": "Who wrote Don Quixote?", "answers": ["cervantes", "miguel de cervantes"], "id": "qa_0133"}
+{"question": "How many teeth does an adult human typically have?", "answers": ["32", "thirty-two"], "id": "qa_0134"}
+{"question": "What is the chemical symbol for copper?", "answers": ["cu"], "id": "qa_0135"}
+{"question": "What does GPS stand for?", "answers": ["global positioning system"], "id": "qa_0136"}
+{"question": "How many states are in the United States?", "answers": ["50", "fifty"], "id": "qa_0137"}
+{"question": "What company was founded by Bill Gates?", "answers": ["microsoft"], "id": "qa_0138"}
+{"question": "What galaxy do we live in?", "answers": ["milky way"], "id": "qa_0139"}
+{"question": "Who painted Starry Night?", "answers": ["van gogh", "vincent van gogh"], "id": "qa_0140"}
+{"question": "What is the atomic number of oxygen?", "answers": ["8", "eight"], "id": "qa_0141"}
+{"question": "What planet is known as the Red Planet?", "answers": ["mars"], "id": "qa_0142"}
+{"question": "What is the capital of United Arab Emirates?", "answers": ["abu dhabi"], "id": "qa_0143"}
+{"question": "How many minutes are in an hour?", "answers": ["60", "sixty"], "id": "qa_0144"}
+{"question": "What is the chemical symbol for gold?", "answers": ["au"], "id": "qa_0145"}
+{"question": "What is the tallest building in the world?", "answers": ["burj khalifa"], "id": "qa_0146"}
+{"question": "What is the chemical symbol for helium?", "answers": ["he"], "id": "qa_0147"}
+{"question": "Who wrote The Lord of the Rings?", "answers": ["tolkien", "j.r.r. tolkien"], "id": "qa_0148"}
+{"question": "What is the capital of Saudi Arabia?", "answers": ["riyadh"], "id": "qa_0149"}
+{"question": "What company was founded by Steve Jobs and Steve Wozniak?", "answers": ["apple"], "id": "qa_0150"}
+{"question": "Who wrote The Picture of Dorian Gray?", "answers": ["oscar wilde", "wilde"], "id": "qa_0151"}
+{"question": "What was the ancient Greek city-state famous for philosophy?", "answers": ["athens"], "id": "qa_0152"}
+{"question": "Who wrote The Iliad?", "answers": ["homer"], "id": "qa_0153"}
+{"question": "On what continent is the Sahara Desert located?", "answers": ["africa"], "id": "qa_0154"}
+{"question": "Who wrote Pride and Prejudice?", "answers": ["jane austen", "austen"], "id": "qa_0155"}
+{"question": "What is the capital of Poland?", "answers": ["warsaw"], "id": "qa_0156"}
+{"question": "What was the ancient Greek city-state famous for warriors?", "answers": ["sparta"], "id": "qa_0157"}
+{"question": "How many sides does a hexagon have?", "answers": ["6", "six"], "id": "qa_0158"}
+{"question": "What is the capital of Italy?", "answers": ["rome"], "id": "qa_0159"}
+{"question": "At what temperature does water freeze in Celsius?", "answers": ["0", "zero"], "id": "qa_0160"}
+{"question": "What is the fastest land animal?", "answers": ["cheetah"], "id": "qa_0161"}
+{"question": "What is the name of the Norse god of thunder?", "answers": ["thor"], "id": "qa_0162"}
+{"question": "Who wrote Jane Eyre?", "answers": ["charlotte bronte", "charlotte bront\u00eb", "bronte"], "id": "qa_0163"}
+{"question": "What is the chemical formula for table salt?", "answers": ["nacl", "sodium chloride"], "id": "qa_0164"}
+{"question": "Who wrote War and Peace?", "answers": ["tolstoy", "leo tolstoy"], "id": "qa_0165"}
+{"question": "What is the chemical symbol for helium named after?", "answers": ["the sun", "helios"], "id": "qa_0166"}
+{"question": "What is a baby kangaroo called?", "answers": ["joey"], "id": "qa_0167"}
+{"question": "Who invented the telephone?", "answers": ["alexander graham bell", "bell"], "id": "qa_0168"}
+{"question": "In what year did the Berlin Wall fall?", "answers": ["1989"], "id": "qa_0169"}
+{"question": "What is the largest mammal on Earth?", "answers": ["blue whale"], "id": "qa_0170"}
+{"question": "What is the unit of frequency?", "answers": ["hertz", "hz"], "id": "qa_0171"}
+{"question": "What is the nearest star to Earth?", "answers": ["the sun", "sun"], "id": "qa_0172"}
+{"question": "What is the capital of Brazil?", "answers": ["brasilia", "bras\u00edlia"], "id": "qa_0173"}
+{"question": "What is the most abundant gas in Earth's atmosphere?", "answers": ["nitrogen"], "id": "qa_0174"}
+{"question": "What river flows through Paris?", "answers": ["seine"], "id": "qa_0175"}
+{"question": "In what year did humans first land on the Moon?", "answers": ["1969"], "id": "qa_0176"}
+{"question": "Who was Julius Caesar's adopted heir?", "answers": ["augustus", "octavian"], "id": "qa_0177"}
+{"question": "What do you call a doctor who treats animals?", "answers": ["veterinarian", "vet"], "id": "qa_0178"}
+{"question": "Who wrote The Great Gatsby?", "answers": ["fitzgerald", "f. scott fitzgerald"], "id": "qa_0179"}
+{"question": "What is the capital of Turkey?", "answers": ["ankara"], "id": "qa_0180"}
+{"question": "What animal is known for changing its skin color?", "answers": ["chameleon"], "id": "qa_0181"}
+{"question": "What is the largest country by area?", "answers": ["russia"], "id": "qa_0182"}
+{"question": "What is the capital of Netherlands?", "answers": ["amsterdam"], "id": "qa_0183"}
+{"question": "What force keeps us on the ground?", "answers": ["gravity"], "id": "qa_0184"}
+{"question": "What is the hardest natural substance on Earth?", "answers": ["diamond"], "id": "qa_0185"}
+{"question": "What is the capital of Spain?", "answers": ["madrid"], "id": "qa_0186"}
+{"question": "What is the capital of Finland?", "answers": ["helsinki"], "id": "qa_0187"}
+{"question": "What instrument measures temperature?", "answers": ["thermometer"], "id": "qa_0188"}
+{"question": "What is the currency of Saudi Arabia?", "answers": ["riyal"], "id": "qa_0189"}
+{"question": "What is the most populous country in the world?", "answers": ["india", "china"], "id": "qa_0190"}
+{"question": "How many degrees are in a right angle?", "answers": ["90", "ninety"], "id": "qa_0191"}
+{"question": "What is the capital of South Africa?", "answers": ["pretoria", "cape town"], "id": "qa_0192"}
+{"question": "How many bones are in the adult human body?", "answers": ["206"], "id": "qa_0193"}
+{"question": "What is the smallest state in the US by area?", "answers": ["rhode island"], "id": "qa_0194"}
+{"question": "What do you call a doctor who treats the heart?", "answers": ["cardiologist"], "id": "qa_0195"}
+{"question": "What do you call a doctor who treats teeth?", "answers": ["dentist"], "id": "qa_0196"}
+{"question": "What is the national animal of China?", "answers": ["panda", "giant panda"], "id": "qa_0197"}
+{"question": "Who wrote Crime and Punishment?", "answers": ["dostoevsky", "fyodor dostoevsky"], "id": "qa_0198"}
+{"question": "In what year did World War II end?", "answers": ["1945"], "id": "qa_0199"}
+{"question": "Who wrote Frankenstein?", "answers": ["mary shelley", "shelley"], "id": "qa_0200"}
+{"question": "Who wrote A Tale of Two Cities?", "answers": ["dickens", "charles dickens"], "id": "qa_0201"}
+{"question": "How many players are on a soccer team on the field?", "answers": ["11", "eleven"], "id": "qa_0202"}
+{"question": "What river flows through Egypt?", "answers": ["nile"], "id": "qa_0203"}
+{"question": "What is the chemical symbol for zinc?", "answers": ["zn"], "id": "qa_0204"}
+{"question": "What is the capital of Greece?", "answers": ["athens"], "id": "qa_0205"}
+{"question": "What metal is liquid at room temperature?", "answers": ["mercury"], "id": "qa_0206"}
+{"question": "What is a baby cat called?", "answers": ["kitten"], "id": "qa_0207"}
+{"question": "What document begins with 'We the People'?", "answers": ["the constitution", "us constitution"], "id": "qa_0208"}
+{"question": "What is the capital of the United States?", "answers": ["washington", "washington d.c.", "washington dc"], "id": "qa_0209"}
+{"question": "What is the process by which plants make food called?", "answers": ["photosynthesis"], "id": "qa_0210"}
+{"question": "Who discovered penicillin?", "answers": ["alexander fleming", "fleming"], "id": "qa_0211"}
+{"question": "What sea separates Europe and Africa?", "answers": ["mediterranean"], "id": "qa_0212"}
+{"question": "What is the chemical symbol for calcium?", "answers": ["ca"], "id": "qa_0213"}
+{"question": "What is the atomic number of hydrogen?", "answers": ["1", "one"], "id": "qa_0214"}
+{"question": "What is the largest organ of the human body?", "answers": ["skin"], "id": "qa_0215"}
+{"question": "What is the unit of electrical resistance?", "answers": ["ohm"], "id": "qa_0216"}
+{"question": "What is the capital of Iraq?", "answers": ["baghdad"], "id": "qa_0217"}
+{"question": "What is the capital of Qatar?", "answers": ["doha"], "id": "qa_0218"}
+{"question": "What company created the Android operating system?", "answers": ["google"], "id": "qa_0219"}
+{"question": "What is the ringed planet?", "answers": ["saturn"], "id": "qa_0220"}
+{"question": "What canal connects the Mediterranean and Red seas?", "answers": ["suez", "suez canal"], "id": "qa_0221"}
+{"question": "Who was the first woman in space?", "answers": ["valentina tereshkova", "tereshkova"], "id": "qa_0222"}
+{"question": "What is a baby dog called?", "answers": ["puppy"], "id": "qa_0223"}
+{"question": "What mountain range runs through South America?", "answers": ["andes"], "id": "qa_0224"}
+{"question": "What year was Sputnik launched?", "answers": ["1957"], "id": "qa_0225"}
+{"question": "What is the king of the jungle?", "answers": ["lion"], "id": "qa_0226"}
+{"question": "What is the study of weather called?", "answers": ["meteorology"], "id": "qa_0227"}
+{"question": "What is 15 percent of 200?", "answers": ["30", "thirty"], "id": "qa_0228"}
+{"question": "What is the capital of Lebanon?", "answers": ["beirut"], "id": "qa_0229"}
+{"question": "Who wrote Dracula?", "answers": ["bram stoker", "stoker"], "id": "qa_0230"}
+{"question": "What programming language is named after a snake?", "answers": ["python"], "id": "qa_0231"}
+{"question": "How often are the Summer Olympic Games held?", "answers": ["four", "every four years", "4"], "id": "qa_0232"}
+{"question": "Who wrote The Hobbit?", "answers": ["tolkien", "j.r.r. tolkien"], "id": "qa_0233"}
+{"question": "At what temperature does water boil at sea level in Celsius?", "answers": ["100"], "id": "qa_0234"}
+{"question": "What space agency put the first man on the moon?", "answers": ["nasa"], "id": "qa_0235"}
+{"question": "What gas do plants release during photosynthesis?", "answers": ["oxygen"], "id": "qa_0236"}
+{"question": "What is the longest river in the world?", "answers": ["nile", "amazon"], "id": "qa_0237"}
+{"question": "What is the capital of New Zealand?", "answers": ["wellington"], "id": "qa_0238"}
+{"question": "What is the name of the Greek god of the sea?", "answers": ["poseidon"], "id": "qa_0239"}
+{"question": "What is the most populous city in the world?", "answers": ["tokyo"], "id": "qa_0240"}
+{"question": "What particle has a negative charge?", "answers": ["electron"], "id": "qa_0241"}
+{"question": "What is the capital of South Korea?", "answers": ["seoul"], "id": "qa_0242"}
+{"question": "Who was the first President of the United States?", "answers": ["george washington", "washington"], "id": "qa_0243"}
+{"question": "Who was the first person to walk on the Moon?", "answers": ["neil armstrong", "armstrong"], "id": "qa_0244"}
+{"question": "In what country did the Olympic Games originate?", "answers": ["greece"], "id": "qa_0245"}
+{"question": "Who wrote Oliver Twist?", "answers": ["dickens", "charles dickens"], "id": "qa_0246"}
+{"question": "What is the study of ancient life through fossils called?", "answers": ["paleontology"], "id": "qa_0247"}
+{"question": "What is the capital of Belgium?", "answers": ["brussels"], "id": "qa_0248"}
+{"question": "What particle has a positive charge?", "answers": ["proton"], "id": "qa_0249"}
+{"question": "Who developed the theory of general relativity?", "answers": ["einstein", "albert einstein"], "id": "qa_0250"}
+{"question": "What is the smallest planet in our solar system?", "answers": ["mercury"], "id": "qa_0251"}
+{"question": "What is a baby cow called?", "answers": ["calf"], "id": "qa_0252"}
+{"question": "Who discovered gravity, according to legend, from an apple?", "answers": ["newton", "isaac newton"], "id": "qa_0253"}
+{"question": "What part of the plant conducts photosynthesis?", "answers": ["leaves", "leaf"], "id": "qa_0254"}
+{"question": "What year did the French Revolution begin?", "answers": ["1789"], "id": "qa_0255"}
+{"question": "Who formulated the laws of motion and universal gravitation?", "answers": ["newton", "isaac newton"], "id": "qa_0256"}
+{"question": "What US state is known as the Golden State?", "answers": ["california"], "id": "qa_0257"}
+{"question": "What country hosted the 2022 FIFA World Cup?", "answers": ["qatar"], "id": "qa_0258"}
+{"question": "Who invented the light bulb?", "answers": ["thomas edison", "edison"], "id": "qa_0259"}
+{"question": "What is the chemical symbol for carbon?", "answers": ["c"], "id": "qa_0260"}
+{"question": "What is the capital of Nigeria?", "answers": ["abuja"], "id": "qa_0261"}
+{"question": "What river flows through London?", "answers": ["thames"], "id": "qa_0262"}
+{"question": "What was the name of the airplane that dropped the first atomic bomb?", "answers": ["enola gay"], "id": "qa_0263"}
+{"question": "What is the largest bird in the world?", "answers": ["ostrich"], "id": "qa_0264"}
+{"question": "What is the speed of light in a vacuum, approximately?", "answers": ["300,000", "3x10^8", "299,792"], "id": "qa_0265"}
+{"question": "What is the capital of Mexico?", "answers": ["mexico city"], "id": "qa_0266"}
+{"question": "What is the capital of Egypt?", "answers": ["cairo"], "id": "qa_0267"}
+{"question": "Who wrote Anna Karenina?", "answers": ["tolstoy", "leo tolstoy"], "id": "qa_0268"}
+{"question": "What is the smallest ocean?", "answers": ["arctic"], "id": "qa_0269"}
+{"question": "Who wrote Harry Potter and the Philosopher's Stone?", "answers": ["j.k. rowling", "rowling"], "id": "qa_0270"}
+{"question": "Who composed the Ninth Symphony with the Ode to Joy?", "answers": ["beethoven", "ludwig van beethoven"], "id": "qa_0271"}
+{"question": "What is the best-selling video game console of all time?", "answers": ["playstation 2", "ps2"], "id": "qa_0272"}
+{"question": "Who wrote One Hundred Years of Solitude?", "answers": ["gabriel garcia marquez", "garc\u00eda m\u00e1rquez", "marquez"], "id": "qa_0273"}
+{"question": "What is the study of earthquakes called?", "answers": ["seismology"], "id": "qa_0274"}
+{"question": "Who was the queen of ancient Egypt famous for her beauty?", "answers": ["cleopatra"], "id": "qa_0275"}
+{"question": "How many colors are in a rainbow?", "answers": ["7", "seven"], "id": "qa_0276"}
+{"question": "What do bees collect from flowers?", "answers": ["nectar", "pollen"], "id": "qa_0277"}
+{"question": "What was the name of Christopher Columbus's ship?", "answers": ["santa maria", "santa mar\u00eda"], "id": "qa_0278"}
+{"question": "What is the capital of Argentina?", "answers": ["buenos aires"], "id": "qa_0279"}
+{"question": "What year did the American Declaration of Independence get signed?", "answers": ["1776"], "id": "qa_0280"}
+{"question": "Who was the leader of the Soviet Union during WWII?", "answers": ["stalin", "joseph stalin"], "id": "qa_0281"}
+{"question": "What gas do plants absorb from the atmosphere?", "answers": ["carbon dioxide", "co2"], "id": "qa_0282"}
+{"question": "What company was founded by Jeff Bezos?", "answers": ["amazon"], "id": "qa_0283"}
+{"question": "Who was the president of the US during the Civil War?", "answers": ["lincoln", "abraham lincoln"], "id": "qa_0284"}
+{"question": "Who wrote Things Fall Apart?", "answers": ["chinua achebe", "achebe"], "id": "qa_0285"}
+{"question": "What ancient civilization built the pyramids of Giza?", "answers": ["egyptian", "egyptians", "ancient egypt"], "id": "qa_0286"}
+{"question": "What continent is Brazil located on?", "answers": ["south america"], "id": "qa_0287"}
+{"question": "What is the capital of Ireland?", "answers": ["dublin"], "id": "qa_0288"}
+{"question": "What organ pumps blood through the body?", "answers": ["heart"], "id": "qa_0289"}
+{"question": "How many planets are in our solar system?", "answers": ["eight", "8"], "id": "qa_0290"}
+{"question": "What is the closest planet to the Sun?", "answers": ["mercury"], "id": "qa_0291"}
+{"question": "In what city is the Statue of Liberty located?", "answers": ["new york"], "id": "qa_0292"}
+{"question": "Who was the first female Prime Minister of the United Kingdom?", "answers": ["margaret thatcher", "thatcher"], "id": "qa_0293"}
+{"question": "What is the powerhouse of the cell?", "answers": ["mitochondria", "mitochondrion"], "id": "qa_0294"}
+{"question": "What empire was ruled by Julius Caesar?", "answers": ["roman", "roman empire", "rome"], "id": "qa_0295"}
+{"question": "What is the capital of Austria?", "answers": ["vienna"], "id": "qa_0296"}
+{"question": "What is the unit of force?", "answers": ["newton"], "id": "qa_0297"}
+{"question": "What continent is Egypt located in?", "answers": ["africa"], "id": "qa_0298"}
+{"question": "What is the largest muscle in the human body?", "answers": ["gluteus maximus"], "id": "qa_0299"}
+{"question": "What instrument measures atmospheric pressure?", "answers": ["barometer"], "id": "qa_0300"}
+{"question": "What is the largest island in the world?", "answers": ["greenland"], "id": "qa_0301"}
+{"question": "What is the capital of Peru?", "answers": ["lima"], "id": "qa_0302"}
+{"question": "What is the capital of Vietnam?", "answers": ["hanoi"], "id": "qa_0303"}
