@@ -26,8 +26,8 @@ stopping controller that does.
 | Entropy baseline (S3) | Done — informative once read from pre-selection logprobs; precision ~0.96–0.97, recall 0.31→1.00 across threshold sweep |
 | Learned sufficiency probe (S1), pilot | Pipeline working end-to-end (`scripts/probe_training.ipynb`); pilot result is comparable to entropy but on a test set too small to be conclusive (49 boundaries, 4 negative) — see `docs/lab-notebook.md` |
 | Quantization deployment gap check | Done — mean cosine similarity 0.981 (range 0.967–0.988) between full-precision and Q4 hidden states on 20 real examples; no dimension mismatch, small pattern of slightly lower similarity on deeper boundaries — see `docs/lab-notebook.md` |
-| Probe evaluated directly on Q4 hidden states (not just full-precision) | Not started — the more direct follow-up to the equivalence check above |
-| Expanded QA dataset for a trustworthy probe evaluation | Not started — identified as the next step |
+| Probe evaluated directly on Q4 hidden states | Done — average precision 0.995 on a held-out set of 42 Q4-derived boundaries (36 safe / 6 unsafe); comparable to, and possibly modestly better than, the entropy baseline at matched recall. The probe's signal survives the full-precision-to-Q4 transition. Still a small test set — see `docs/lab-notebook.md` |
+| Expanded QA dataset for a trustworthy probe evaluation | Not started — identified as the next step; would strengthen the probe-vs-entropy comparison above beyond a small-sample result |
 | Draft-agreement signal (S2) | Not started |
 | Live controller on the Pi | Not started |
 | E2 — quality vs. measured energy (baseline comparison) | Not started |

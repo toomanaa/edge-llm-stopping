@@ -294,3 +294,53 @@ Q4-extracted hidden states for the labeled boundary set and see if its
 precision/recall curve survives. High cosine similarity is encouraging
 indirect evidence; probe performance on Q4 data would be the direct
 evidence, and is the more convincing thing to put in the paper.
+
+## Probe evaluated directly on Q4 hidden states (the direct deployment test)
+
+Followed up the cosine-similarity check with the more direct test: does
+the already-trained probe (trained entirely on full-precision hidden
+states) still work when fed real Q4 hidden states from the actual
+deployment platform?
+
+Built `collect_q4_embeddings_full.py`, an extension of the earlier
+20-sample script that instead collects Q4 embeddings for the **entire**
+hard-boundary set (217 boundaries, matching exactly what the original
+probe training and evaluation used), with the true safe/unsafe label
+attached directly. Run on the Pi against the live `--embeddings`
+server: 217/217 collected successfully, 202 safe / 15 unsafe overall --
+notably more negative examples available than the 4 that limited the
+original full-precision test split, simply because this pulls from the
+whole labeled set rather than one random 25% slice.
+
+Built a second Colab cell, `colab_probe_on_q4_cell.py`, that loads the
+saved probe and scaler (`probe_and_scaler.pkl`, downloaded from the
+original training run) and the Q4 embeddings, reproduces the *same*
+grouped train/test split (by response id, `test_size=0.25`,
+`random_state=42`) used during training, and evaluates the probe's
+`predict_proba` directly on the Q4-derived test vectors -- an honest
+held-out test, not a re-run on data the probe already saw. Both the
+split logic and the probe-loading/evaluation logic were simulated with
+synthetic data and confirmed to run end-to-end before handing the cell
+over.
+
+**Result: held-out test set of 42 boundaries (36 safe / 6 unsafe),
+average precision 0.995.** The full precision-recall curve is a
+believable, non-degenerate shape -- at the most permissive threshold,
+precision is 0.857 with recall 1.000 (a handful of false positives let
+through); precision climbs to 1.000 as the threshold tightens, with
+recall falling accordingly. At recall roughly matched to the entropy
+baseline's higher-recall operating points (~0.9), the probe shows
+precision around 0.971, compared to entropy's ~0.963-0.965 in a similar
+range -- a modest, not dramatic, edge.
+
+**Honest reading.** This directly answers the question raised about the
+deployment gap: the probe's signal survives the transition from
+full-precision training to real Q4/llama.cpp hidden states on the
+actual Pi. It does not simply collapse or become noise. The comparison
+to the entropy baseline is close, with the probe showing a small
+apparent edge at matched recall on this sample, but 42 test boundaries
+(6 negative) is still a small evaluation -- "comparable to, and
+possibly modestly better than, entropy" is the honest claim right now,
+not "the probe clearly beats entropy." The dataset-expansion step
+identified earlier remains the way to get a test set large enough to
+say something stronger with confidence.
