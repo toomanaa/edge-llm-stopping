@@ -241,3 +241,56 @@ the existing style) and "explain" / "why" questions that naturally
 provoke longer, multi-sentence answers -- since that is specifically
 where genuine stop-or-continue decisions occur, and where the current
 dataset is thin.
+
+## Deployment gap: does the probe's signal survive quantization?
+
+Raised as a direct challenge to the probe pilot: the notebook trains on
+hidden states from the full-precision HuggingFace model, but the Pi
+actually runs a Q4-quantized GGUF model through llama.cpp, which is a
+separate implementation. Proving the probe works on full-precision
+hidden states does not by itself prove the same signal is accessible or
+behaves the same way on the deployed Q4 model. This needed to be
+checked, not assumed, before any claim about the probe "working."
+
+**Discovered that llama.cpp's server has a `/embeddings` endpoint** that,
+with `"pooling": "none"`, returns real per-token hidden states directly
+from the running Q4 model -- no separate tooling needed. Confirmed the
+vector dimension (2048) matches HuggingFace's `hidden_size` exactly, so
+there is no structural mismatch to worry about.
+
+**Built a two-sided comparison.** On the Pi: restarted `llama-server`
+with `--embeddings` enabled, then wrote `collect_q4_embeddings.py`,
+which selects 20 real (question, boundary) pairs at random from
+`qa_gen_run3.jsonl` -- deliberately a mix of easy single-boundary and
+harder multi-boundary examples -- and queries `/embeddings` for the
+last-token hidden state of each, matching exactly what the probe
+notebook uses. In Colab: added a cell that reconstructs the identical
+prompt for each of those 20 examples, computes the full-precision hidden
+state the same way the probe training does, and compares the two vectors
+with cosine similarity and L2 distance. The comparison math itself was
+unit-tested first (identical vectors -> cosine 1.0, orthogonal vectors ->
+cosine 0.0, small synthetic perturbation -> cosine ~0.999) before trusting
+it on real data.
+
+**Result: mean cosine similarity 0.981 across the 20 pairs (range
+0.967-0.988), no outliers, no dimension mismatches.** This is a
+reassuring answer to the original challenge -- the Q4 model's hidden
+states are structurally very close to the full-precision ones the probe
+was trained on. One real pattern in the data: the lowest-similarity
+examples (0.967-0.975) were consistently the deeper, later-boundary
+cases (boundary 15-18) rather than the single-sentence, boundary-0
+cases (which mostly scored 0.98-0.99) -- consistent with small
+per-token quantization rounding compounding slightly over longer
+contexts. The effect is small on this sample but worth tracking as
+responses get longer.
+
+**Honest scope of this check:** 20 examples is enough to rule out a
+gross, obvious failure (e.g. a completely different pooling convention
+or a dimension mismatch), but it is not the same as proving the trained
+probe's actual precision/recall holds up when evaluated *directly on Q4
+hidden states* rather than full-precision ones. That is the next,
+more direct test: run the already-trained probe's weights against
+Q4-extracted hidden states for the labeled boundary set and see if its
+precision/recall curve survives. High cosine similarity is encouraging
+indirect evidence; probe performance on Q4 data would be the direct
+evidence, and is the more convincing thing to put in the paper.

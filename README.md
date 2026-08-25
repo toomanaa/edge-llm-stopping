@@ -25,6 +25,8 @@ stopping controller that does.
 | E1 preliminary — open-ended factual QA | Done — real waste found: 2,388 wasted tokens / ~1,348 J across 291 correct responses, reproduced across 3 runs |
 | Entropy baseline (S3) | Done — informative once read from pre-selection logprobs; precision ~0.96–0.97, recall 0.31→1.00 across threshold sweep |
 | Learned sufficiency probe (S1), pilot | Pipeline working end-to-end (`scripts/probe_training.ipynb`); pilot result is comparable to entropy but on a test set too small to be conclusive (49 boundaries, 4 negative) — see `docs/lab-notebook.md` |
+| Quantization deployment gap check | Done — mean cosine similarity 0.981 (range 0.967–0.988) between full-precision and Q4 hidden states on 20 real examples; no dimension mismatch, small pattern of slightly lower similarity on deeper boundaries — see `docs/lab-notebook.md` |
+| Probe evaluated directly on Q4 hidden states (not just full-precision) | Not started — the more direct follow-up to the equivalence check above |
 | Expanded QA dataset for a trustworthy probe evaluation | Not started — identified as the next step |
 | Draft-agreement signal (S2) | Not started |
 | Live controller on the Pi | Not started |
@@ -35,7 +37,8 @@ stopping controller that does.
 See `docs/lab-notebook.md` for the detailed, chronological account of
 what was tried, what broke, and how it was fixed — including a full
 walkthrough of three data-leakage and stale-variable bugs found and
-fixed during the first probe-training pass.
+fixed during the first probe-training pass, and the quantization
+equivalence check that followed.
 
 ## Repository layout
 
@@ -44,6 +47,7 @@ paper/                LaTeX source (elsarticle / FGCS format)
 scripts/pi/            scripts that run ON the Raspberry Pi (generation, power logging, setup)
 scripts/analysis/      scripts that run on any machine (labeling, figure generation)
 scripts/generators/    dataset generation scripts (seeded, reproducible)
+scripts/equivalence/   Q4-vs-full-precision hidden state comparison (deployment gap check)
 scripts/probe_training.ipynb   Colab notebook: hidden-state extraction + probe training (Phase 4)
 data/                   datasets (smart-home commands, QA questions) with ground truth
 figures/                generated plots (populated by scripts/analysis/make_figures.py)
