@@ -344,3 +344,70 @@ possibly modestly better than, entropy" is the honest claim right now,
 not "the probe clearly beats entropy." The dataset-expansion step
 identified earlier remains the way to get a test set large enough to
 say something stronger with confidence.
+
+## Building the v2 QA dataset
+
+Started work on the dataset expansion identified as the limiting factor
+throughout. No standard mix of factual vs. explanatory questions exists
+in the literature to borrow -- factoid QA (NQ-open, TriviaQA) and
+non-factoid/explanatory QA (ANTIQUE, WikiQA) are studied as separate
+benchmark categories, not combined with an established ratio. Chose a
+60% explain/why, 40% factual split deliberately: explain/why questions
+are what v1 showed reliably produces multi-sentence answers with real
+"unsafe" stopping boundaries, so the dataset is weighted toward the
+question type that exercises the phenomenon under study.
+
+Built `make_qa_v2.py` generating 1,074 questions (434 factual, 640
+explain/why across ~160 topics with 4 question-template variants each).
+Explain questions carry a list of required concept keywords rather than
+a single answer string, with a new `match_mode` field: "any" (factual --
+correct if the text contains at least one accepted answer) or "all"
+(explain -- correct only if the text contains every required concept).
+
+**Caught a real grammar bug before shipping.** The first generator draft
+combined gerund-phrase topics ("leaves changing color") with templates
+expecting a finite-clause object ("Why does {t}?"), producing broken
+questions like "Why does some clouds bring rain and others dont?" Fixed
+by restricting to templates that work correctly with noun-phrase topics
+("What causes {t}?", "Explain how {t} works.", etc.) and fixing the one
+topic that was itself phrased as a full clause rather than a noun
+phrase. A residual, milder awkwardness remains in some entries (mixed
+gerund/finite-verb topic phrasing), noted honestly as a known limitation
+rather than hidden -- the questions are still comprehensible to the
+model, just not textbook-clean English, and correctness here matters
+less than in a dataset meant to be a citable benchmark in its own right.
+
+Built matching `run_qa_v2_generation.py` (same generation logic as v1,
+now carrying `type` and `match_mode` through to the output) and
+`label_qa_v2_boundaries.py` (extends v1's labeler with `match_mode`-aware
+correctness checking). Unit-tested the new "all" logic on synthetic data
+before running on the Pi: a synthetic explain response containing only
+one of two required concepts was correctly marked incorrect and excluded
+from boundary labeling, confirming the extension works as intended.
+
+**Smoke-test debugging on the Pi.** A 5-question smoke test surfaced two
+real issues before committing to the full run. First, `llama-server`
+needed restarting (a "No such file or directory" error on
+`llama-server` turned out to be a stale terminal state, resolved by
+re-running the same startup command). Second, and more substantively,
+both explain-question responses in the smoke test hit the original
+250-token generation cap and were truncated mid-sentence -- a genuine
+problem, since a labeler that assumes responses reach a natural end
+cannot correctly score a boundary near an artificial cutoff.
+
+Diagnosed by progressively raising the cap: at 400 tokens, still
+truncating; at 800 tokens (tested on 20 questions), the longest
+response was 642 tokens and finished naturally, with explain responses
+averaging ~464 tokens against ~12 for factual ones. Set the generation
+cap to 800 for the full run based on this. Also noted the model's
+explain answers are heavily structured (numbered lists, bold markdown
+headers) rather than plain prose, which may need revisiting in the
+sentence-boundary regex later, though it was not blocking for
+generation itself.
+
+**Revised time estimate.** The original plan assumed run time similar
+to v1 (~20 minutes for 304 short questions). With explain responses
+averaging ~464 tokens across 640 of the 1,074 questions, the full run
+is estimated at roughly 8-9 hours, not 1-2 -- launched as an overnight,
+unattended run on wall power (not the battery bank, which is reserved
+for the E3 battery-drain experiment).

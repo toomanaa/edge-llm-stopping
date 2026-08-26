@@ -27,7 +27,8 @@ stopping controller that does.
 | Learned sufficiency probe (S1), pilot | Pipeline working end-to-end (`scripts/probe_training.ipynb`); pilot result is comparable to entropy but on a test set too small to be conclusive (49 boundaries, 4 negative) — see `docs/lab-notebook.md` |
 | Quantization deployment gap check | Done — mean cosine similarity 0.981 (range 0.967–0.988) between full-precision and Q4 hidden states on 20 real examples; no dimension mismatch, small pattern of slightly lower similarity on deeper boundaries — see `docs/lab-notebook.md` |
 | Probe evaluated directly on Q4 hidden states | Done — average precision 0.995 on a held-out set of 42 Q4-derived boundaries (36 safe / 6 unsafe); comparable to, and possibly modestly better than, the entropy baseline at matched recall. The probe's signal survives the full-precision-to-Q4 transition. Still a small test set — see `docs/lab-notebook.md` |
-| Expanded QA dataset for a trustworthy probe evaluation | Not started — identified as the next step; would strengthen the probe-vs-entropy comparison above beyond a small-sample result |
+| Expanded QA dataset (v2) — built | Done — 1,074 questions (434 factual, 640 explain/why), designed to produce many more genuine multi-boundary "hard" decision points than v1. `data/qa_v2.jsonl`, `scripts/generators/make_qa_v2.py`, `scripts/pi/run_qa_v2_generation.py`, `scripts/analysis/label_qa_v2_boundaries.py` |
+| Expanded QA dataset (v2) — run on the Pi | In progress — full generation run launched (~8–9 hr estimated, explain answers average ~464 tokens); once complete, re-run the entropy baseline, probe pilot, and Q4 evaluation on this larger, better-balanced set |
 | Draft-agreement signal (S2) | Not started |
 | Live controller on the Pi | Not started |
 | E2 — quality vs. measured energy (baseline comparison) | Not started |
