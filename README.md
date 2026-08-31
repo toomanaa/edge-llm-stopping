@@ -23,19 +23,15 @@ stopping controller that does.
 | Hardware setup (Pi 5, PMIC power sensing, cooler, USB power meter, battery bank) | Done |
 | E0 — command parsing under format-anchored prompting | Done — zero waste found (a negative but informative result) |
 | E1 preliminary — open-ended factual QA | Done — real waste found: 2,388 wasted tokens / ~1,348 J across 291 correct responses, reproduced across 3 runs |
-| Entropy baseline (S3) | Done — informative once read from pre-selection logprobs; precision ~0.96–0.97, recall 0.31→1.00 across threshold sweep |
-| Learned sufficiency probe (S1), pilot | Pipeline working end-to-end (`scripts/probe_training.ipynb`); pilot result is comparable to entropy but on a test set too small to be conclusive (49 boundaries, 4 negative) — see `docs/lab-notebook.md` |
-| Quantization deployment gap check | Done — mean cosine similarity 0.981 (range 0.967–0.988) between full-precision and Q4 hidden states on 20 real examples; no dimension mismatch, small pattern of slightly lower similarity on deeper boundaries — see `docs/lab-notebook.md` |
-| Probe evaluated directly on Q4 hidden states | Done — average precision 0.995 on a held-out set of 42 Q4-derived boundaries (36 safe / 6 unsafe); comparable to, and possibly modestly better than, the entropy baseline at matched recall. The probe's signal survives the full-precision-to-Q4 transition. Still a small test set — see `docs/lab-notebook.md` |
-| Expanded QA dataset (v2) — built | Done — 1,074 questions (434 factual, 640 explain/why), designed to produce many more genuine multi-boundary "hard" decision points than v1. `data/qa_v2.jsonl`, `scripts/generators/make_qa_v2.py`, `scripts/pi/run_qa_v2_generation.py`, `scripts/analysis/label_qa_v2_boundaries.py` |
-| Expanded QA dataset (v2) — run on the Pi | Done, with a real incident along the way — an overnight memory crunch corrupted the Pi's Python installation (fixed by reboot) and killed the power logger partway through. Recovered with a restart-safe refill run (`scripts/pi/find_missing_power.py`, `scripts/pi/run_qa_v2_generation_safe.py`) and a merge step (`scripts/analysis/merge_v2_results.py`) — full story in `docs/lab-notebook.md` |
-| E1-v2 final results | Done — 877/1,074 correct (94.9% factual, 72.7% explain), 180.1 avg tokens wasted (max 721), 87,939 J wasted (877/877 power coverage), 13,569 hard boundaries with 3,623 genuinely unsafe (vs. under 20 in v1). Entropy re-measured: precision drops to ~0.74–0.77 (from v1's inflated ~0.96) — the bar the probe now needs to clear is real. Written into the paper as Section 6.4. `scripts/analysis/make_figures_v2.py` |
-| Learned probe retrained/evaluated on v2's boundaries | Done — trained on 4,518 boundaries sampled from the v2 set, grouped 70/15/15 train/val/test split, 5 random seeds. Test-set average precision 0.890 ± 0.045 across seeds (worst 0.833, best 0.964), every seed beating the entropy baseline's ~0.74–0.77 ceiling. The probe's precision-recall curve sits clearly above entropy's across most of the recall range. Written into the paper as Section 6.5. `scripts/probe_training_v2.ipynb` |
-| Draft-agreement signal (S2) | Not started |
-| Live controller on the Pi | Not started — the next real build, wiring the trained probe + energy pricing + battery-state schedule into the actual generation loop |
-| Draft-agreement signal (S2) | Not started |
-| Live controller on the Pi | Not started |
-| E2 — quality vs. measured energy (baseline comparison) | Not started |
+| Entropy baseline (S3), v1 | Done — informative once read from pre-selection logprobs; precision ~0.96–0.97 on the small v1 set (later found to be inflated by too few hard cases — see v2 below) |
+| Learned sufficiency probe (S1), pilot | Pipeline working end-to-end (`scripts/probe_training.ipynb`); pilot result comparable to entropy but on a test set too small to be conclusive (49 boundaries, 4 negative) — superseded by the v2 retrain below |
+| Quantization deployment gap check | Done — mean cosine similarity 0.981 (range 0.967–0.988) between full-precision and Q4 hidden states on 20 real examples; probe evaluated directly on real Q4 hidden states scored 0.995 average precision on a 42-boundary held-out set. The probe's signal survives the full-precision-to-Q4 transition — see `docs/lab-notebook.md` |
+| Expanded QA dataset (v2) — built and run | Done, with a real incident along the way — an overnight memory crunch corrupted the Pi's Python installation (fixed by reboot) and killed the power logger partway through. Recovered with a restart-safe refill run and a merge step to reach full (880/880) power coverage — full story in `docs/lab-notebook.md` |
+| E1-v2 final results | Done — 880/1,074 correct (94.9% factual, 73.1% explain), 182.3 avg tokens wasted (max 716), 89,268 J wasted (880/880 power coverage), 13,568 hard boundaries with 3,507 genuinely unsafe (vs. under 20 in v1). Entropy re-measured: precision ~0.75–0.78 (down substantially from v1's misleading ~0.96). Written into the paper as Section 6.4 |
+| Learned probe retrained/evaluated on v2's boundaries | Done — trained on 4,518 boundaries sampled from the v2 set, grouped 70/15/15 train/val/test split, 5 random seeds. Test-set average precision 0.890 ± 0.045 across seeds (worst 0.833, best 0.964), every seed beating the entropy baseline's ceiling. Written into the paper as Section 6.5. `scripts/probe_training_v2.ipynb` |
+| Shared correctness-grading module | Done — `scripts/analysis/correctness.py` / `scripts/controller/correctness.py`, one tested definition of "correct" used by both the offline labeler and the live controller. Handles word-form variants for explain concepts (align/alignment) and plurals for factual answers, while rejecting accidental substring matches (wind/window) — see `docs/lab-notebook.md` |
+| Live controller (probe export + real-time stopping) | Working — `scripts/controller/`: probe export (validated to floating-point precision against scikit-learn), pure-numpy inference on the Pi (no sklearn/PyTorch needed), and a live generation loop that decides stop-or-continue mid-response using real `/embeddings` calls. Three real bugs found and fixed during smoke testing; 10-question test accuracy improved from 60% to 80% after fixes. Not yet run at full scale |
+| E2 — quality vs. measured energy (baseline comparison) | Not started — the natural next step once the live controller is run at full scale |
 | E3 — battery drain runs | Not started |
 | E4 — overhead accounting | Not started |
 
@@ -53,7 +49,9 @@ scripts/pi/            scripts that run ON the Raspberry Pi (generation, power l
 scripts/analysis/      scripts that run on any machine (labeling, figure generation)
 scripts/generators/    dataset generation scripts (seeded, reproducible)
 scripts/equivalence/   Q4-vs-full-precision hidden state comparison (deployment gap check)
-scripts/probe_training.ipynb   Colab notebook: hidden-state extraction + probe training (Phase 4)
+scripts/controller/    the live controller (probe export, pure-numpy inference, real-time stopping)
+scripts/probe_training.ipynb      Colab notebook: probe pilot training (v1, superseded)
+scripts/probe_training_v2.ipynb   Colab notebook: probe training on v2 data (current)
 data/                   datasets (smart-home commands, QA questions) with ground truth
 figures/                generated plots (populated by scripts/analysis/make_figures.py)
 docs/                   lab notebook and design notes

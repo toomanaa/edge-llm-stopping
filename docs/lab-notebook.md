@@ -593,3 +593,119 @@ anything not downloaded is lost if the session resets. Both handled as
 small appended utility cells in the notebook (Sections 11-12) rather
 than undocumented one-off snippets, so the full record of what was run
 stays in one place.
+
+## Building the live controller
+
+Everything up to this point graded stopping decisions offline: generate
+a full response, then look back and label where stopping would have
+been safe. The actual system needs to decide live, mid-generation. Built
+this in stages, each with real bugs found and fixed before moving on --
+worth recording in full since the debugging path mattered as much as
+the destination.
+
+**Exporting the probe.** Rather than run scikit-learn on the Pi (version
+compatibility risk between the Colab environment that trained the probe
+and whatever the Pi has), built `export_probe_weights.py` to pull the
+trained MLP's raw weights and the scaler's mean/scale out as a plain
+`.npz` file, and `probe_inference.py` to reimplement the forward pass
+(scale, matmul, ReLU, sigmoid) in pure numpy on the Pi side. Validated
+by training a fresh scikit-learn MLP with the same architecture in this
+environment, exporting it, running both the original and the numpy
+reimplementation on 200 test points, and confirming outputs matched to
+floating-point precision (max difference 0.0) before trusting it near
+the real trained probe. Loaded correctly on the Pi on the first try.
+
+**Bug 1: boundaries checked too rarely.** The first version of
+`live_controller.py` only asked the probe "is it safe to stop" when a
+generated chunk happened to end exactly at a period -- but with
+fixed-size 20-token chunks, that is mostly coincidence, since sentences
+rarely finish exactly at a chunk boundary. First smoke test showed
+responses running 300+ words between checks. Fixed by searching the
+*entire* accumulated text for every new sentence boundary as it
+appears, checking each one individually, and discarding any text
+generated past the boundary that triggers a stop. Verified with a test
+that packs three sentences into one fake chunk and confirms all three
+get checked separately, with the response correctly truncated at
+whichever one triggers.
+
+**Bug 2: markdown structure mistaken for content.** With the chunk-size
+bug fixed, a new failure appeared: the probe stopped confidently and
+wrongly right after markdown section headers like "**Types of
+Eclipses:**" -- a heading, not an answer. Traced to the boundary regex
+matching bare newlines as well as real punctuation; markdown headers
+and list intros produce a lot of newlines, and the probe (trained on
+boundaries detected with the same regex) appears to have picked up a
+spurious correlation between "text ending right after a
+structural newline" and "safe to stop." Fixed by restricting boundaries
+to genuine sentence-ending punctuation only. A second, related case
+then appeared: numbered-list markers ("1." "2." "3.") also matched
+plain `[.!?]` punctuation and produced the same kind of content-free
+stopping point. Fixed with a lookbehind excluding periods immediately
+preceded by a digit. Both fixes were validated against the exact failing
+text before being trusted, including a check that multi-digit list
+numbers ("12.") are excluded too, and that real sentences are never
+accidentally excluded.
+
+**Bug 3: overly strict correctness grading, plus a packaging mistake.**
+With both boundary bugs fixed, live accuracy was still around 60%, well
+below the ~82% offline baseline. Manually inspecting the "wrong"
+results found that two of four failures were not stopping failures at
+all: the model had explained the required concept correctly but used a
+different word form than the dataset's exact required string ("align"
+instead of "alignment", "generate" instead of "generator"), and the
+exact-substring correctness check did not recognize them as the same
+concept. Since this check is also what produced the offline v2 numbers
+already written into the paper (and the labels the probe itself trained
+on), this was a real, scope-relevant bug, not just a live-controller
+issue.
+
+Built a shared `correctness.py`, imported by both the offline labeler
+and the live controller (previously two separate copies of the same
+logic, which is exactly the kind of drift that causes silent bugs).
+First attempt used a naive shared-prefix heuristic and produced clear
+false positives on ordinary English -- "wind" is a character-prefix of
+"window", "star" of "start" -- caught by testing before shipping.
+Second attempt required the leftover characters on each side of a
+shared prefix to be a recognized derivational suffix (e.g. "align" +
+"ment", "generat" + "e"/"or"), which passed a broad test suite
+including the exact real failure cases. Deploying it surfaced one more
+regression: legitimate plurals of factual answers ("seismograph"
+required, model said "seismographs") started failing once exact
+matching was made word-boundary-aware, since there is no boundary
+between "seismograph" and its own trailing "s". Fixed with a narrow,
+tested allowance for a trailing "s"/"es" specifically on factual
+("any" mode) matches, confirmed not to reopen the wind/window problem.
+
+Separately, an actual deployment mistake: the first packaged update zip
+had `label_qa_v2_boundaries.py` at the wrong internal path, so it
+extracted to the top level of `~/e1` instead of overwriting the real
+file in `scripts/analysis/` -- the offline report was re-run but showed
+completely unchanged numbers, which was the tell that the fix had
+never actually reached the file being executed. Repackaged with the
+correct directory structure and reran; the offline numbers changed as
+expected on the second attempt.
+
+**Corrected v2 numbers**, after both the boundary-detection and
+correctness fixes (small, expected shifts from the original E1-v2
+numbers, not a different picture): 880 of 1,074 responses correct
+(94.9% factual, 73.1% explain, up from 72.7%), 182.3 average tokens
+wasted (max 716), 160,406 tokens wasted in total, an estimated
+89,268 J wasted (full 880/880 power coverage), 13,568 hard boundaries
+with 3,507 labeled unsafe (down from 3,623 -- the 116-boundary drop is
+exactly the word-form-mismatch boundaries that were being mislabeled
+unsafe before the fix). Entropy's precision shifted up slightly across
+the threshold sweep (e.g. 0.766 -> 0.776 at the tightest threshold).
+None of this changes the paper's qualitative claims -- entropy's real
+ceiling is still far below what the small v1 sample suggested, and the
+probe still has real work to do -- but the exact numbers in
+Section 6.4 need updating to match.
+
+**Live controller result after all three fixes:** on the same 10-question
+smoke test used throughout this debugging pass, accuracy climbed from
+60% to 80%, with the two remaining wrong answers being genuine cases
+(one real premature stop before a required concept appeared, one case
+where the model's explanation took a different, equally plausible
+route that never used the expected concept words at all) rather than
+grading artifacts. Not yet run at full scale; the next step is a full
+run over the v2 dataset with the corrected pipeline, which is what
+E2's quality-vs-energy comparison will actually be built on.

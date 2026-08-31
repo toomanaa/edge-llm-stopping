@@ -548,15 +548,24 @@ usually treated as separate benchmark traditions. The 60/40 split toward
 explain questions was a choice made for this project's purpose, not a
 number pulled from prior work.
 
-877 of the 1{,}074 responses (81.7\%) were correct: 94.9\% of factual
-questions, 72.7\% of explain questions. The explain number is lower
+880 of the 1{,}074 responses (81.9\%) were correct: 94.9\% of factual
+questions, 73.1\% of explain questions. The explain number is lower
 because an explain answer only counts once every required concept
-appears in the text, not just one accepted phrasing. Waste was far
+appears in the text, not just one accepted phrasing -- and, after an
+early version of this check used plain substring matching, we found it
+was penalizing correct explanations that used a different word form
+than the required string (e.g. "align" instead of "alignment"); the
+numbers here use a corrected check that recognizes such variants for
+explain concepts while keeping factual answers to exact matches, since
+those are names and specific facts where broader matching would risk
+false positives.\footnote{The correction is small in practice: 116 of
+3{,}623 boundaries in the first pass turned out to be mislabeled unsafe
+for this reason.} Waste was far
 larger than in the smaller set. Correct responses ran on for an average
-of 180.1 tokens (as many as 721 in one case) past their earliest safe
-stopping point, 157{,}991 wasted tokens in total, an estimated
-87{,}939\,J across the 877 correct responses
-(Figure~\ref{fig:v2-waste-by-type}), with power data covering all 877 of
+of 182.3 tokens (as many as 716 in one case) past their earliest safe
+stopping point, 160{,}406 wasted tokens in total, an estimated
+89{,}268\,J across the 880 correct responses
+(Figure~\ref{fig:v2-waste-by-type}), with power data covering all 880 of
 them this time.
 
 \begin{figure}[t]
@@ -567,12 +576,12 @@ factual versus explain-type questions, on the 1{,}074-question set.}
 \label{fig:v2-waste-by-type}
 \end{figure}
 
-More importantly, this set has real weight behind it. 13{,}569
-boundaries came from responses with more than one sentence, and 3{,}623
+More importantly, this set has real weight behind it. 13{,}568
+boundaries came from responses with more than one sentence, and 3{,}507
 of those were genuinely unsafe to stop at -- against fewer than twenty
 in the original set. Running the entropy-threshold baseline again on
 this larger set gives a different picture
-(Figure~\ref{fig:v1-vs-v2-entropy}). Precision sits around 0.74--0.77
+(Figure~\ref{fig:v1-vs-v2-entropy}). Precision sits around 0.75--0.78
 across the threshold sweep, well below the 0.96--0.97 we measured on the
 smaller set, while recall still climbs from about 0.34 to 1.00 over the
 same range. We take this as the more trustworthy number. A signal that
@@ -611,7 +620,7 @@ Building on Section~\ref{sec:e1prelim} and the larger set in
 Section~\ref{sec:e1v2}, this experiment checks whether the learned probe
 (S1) actually improves on the entropy baseline (S3) established there,
 rather than just matching it. The bar is not low: on the 13{,}569-boundary
-v2 set, entropy holds a precision of roughly 0.74--0.77 across its
+v2 set, entropy holds a precision of roughly 0.75--0.78 across its
 recall range, and any claim for the probe needs to clear that with real
 data behind it, not a handful of edge cases.
 
@@ -631,7 +640,7 @@ boundaries with 132 to 234 of them genuinely unsafe.
 Every one of the five seeds beat entropy's precision ceiling, and by a
 similar margin each time (Figure~\ref{fig:probe-v2-vs-entropy}): the
 probe holds around 0.85--0.90 precision across most of its recall range,
-compared to entropy's 0.74--0.77 over a comparable range. Average
+compared to entropy's 0.75--0.78 over a comparable range. Average
 precision summarizes the whole curve into one number and precision at a
 fixed recall point is not quite the same measurement, so we do not treat
 the two numbers as directly interchangeable, but the curves in the

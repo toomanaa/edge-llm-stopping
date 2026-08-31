@@ -15,14 +15,9 @@ Usage:
 """
 import argparse, json, re, bisect, pathlib
 from collections import defaultdict
+from correctness import is_correct
 
 BOUNDARY = re.compile(r"(?<=[.!?\n])\s+")
-
-def is_correct(text, answers, match_mode):
-    t = text.lower()
-    if match_mode == "all":
-        return all(a.lower() in t for a in answers)
-    return any(a.lower() in t for a in answers)  # "any", default
 
 def boundaries(text):
     offs = [m.start() for m in BOUNDARY.finditer(text)]
