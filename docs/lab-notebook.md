@@ -411,3 +411,133 @@ averaging ~464 tokens across 640 of the 1,074 questions, the full run
 is estimated at roughly 8-9 hours, not 1-2 -- launched as an overnight,
 unattended run on wall power (not the battery bank, which is reserved
 for the E3 battery-drain experiment).
+
+## The overnight run: a memory crunch, a corrupted Python, and recovery
+
+The overnight generation run completed all 1,074 questions, but two
+things went wrong along the way, both traced back to the same root
+cause and both worth recording in full since the debugging path was
+long.
+
+**What happened.** `llama-server` ran as a single continuous process for
+the full ~9-hour run. Checked partway through: memory usage had climbed
+to 7.4 GB of the Pi's 7.9 GB total (89%), with active swapping. The
+power logger, running as a separate background process, appears to have
+been killed or destabilized by this memory pressure at some point
+around the 40% mark of the run, though the generation process itself
+kept going and completed successfully.
+
+**Discovering the real damage.** After the run finished, basic Python
+commands started segfaulting -- first `import json`, then `import re`,
+then even `apt` itself (which depends on Python for some subprocess
+hooks) began crashing. Diagnosed step by step: confirmed no thermal
+throttling (`vcgencmd get_throttled` read `0x0`), no filesystem errors
+in `dmesg`, plenty of disk space free, and file reads working while
+`import json` specifically crashed -- narrowing the fault to something
+in Python's compiled C extension modules (`_json`, `_sre`) rather than
+the interpreter, the filesystem, or the hardware broadly. Multiple
+targeted package reinstalls (`apt install --reinstall python3`,
+then the full `python3.13`/`libpython3.13-stdlib` stack, including a
+genuine version upgrade from 3.13.5-1 to 3.13.5-2+deb13u4) did not fix
+it -- strong evidence the corruption was not sitting in on-disk package
+files, which reinstalling replaces, but in something transient: live
+memory state or a corrupted swap file, neither of which survives a
+reboot.
+
+**The fix was a clean reboot** (`sudo reboot`), which resolved it
+completely -- `json` and `re` imports worked immediately afterward, with
+memory back to a normal ~400 MB used out of 7.9 GB. This confirms the
+diagnosis: severe memory pressure during the unattended run had
+corrupted something in RAM or swap that on-disk package reinstalls
+could not touch, and a reboot cleared it. A side effect of the debugging
+process: repeatedly trying to reinstall packages had left
+`apt-listchanges` in a broken, half-configured state (its own hook
+script was segfaulting on every apt invocation); resolved by moving
+`/etc/apt/apt.conf.d/20listchanges` out of the way so apt stops invoking
+it, rather than continuing to fight a non-essential changelog viewer.
+
+All 1,074 generation records survived on disk untouched throughout --
+the corruption was in the running Python environment, never in the
+data files themselves.
+
+## Recovering full power coverage: a restart-safe refill run
+
+With the generation data intact but the power logger having died
+partway through (confirmed: only 380 of 877 correct responses had
+power data in their timestamp range, verified with a dedicated coverage
+script rather than assumed), rather than redo the full 8-9 hour
+generation, built a targeted refill: `find_missing_power.py` identifies
+exactly which response IDs fall outside the power log's recorded time
+range and extracts just those questions (599 of them) from the original
+dataset for re-collection.
+
+To avoid repeating the same failure mode, built
+`run_qa_v2_generation_safe.py`: a restart-safe version of the generation
+script that processes questions in batches (50 at a time) and, between
+questions, checks `/proc/meminfo` directly -- if available memory drops
+below a 1,500 MB safety threshold, it stops and prints an explicit
+instruction to restart `llama-server` before continuing, rather than
+plowing ahead into another crash. In practice the batch-size cutoff
+(not the memory threshold) was what triggered each pause; memory stayed
+healthy (6.3-6.6 GB available) throughout the whole refill run, meaning
+the periodic server restarts alone were enough to prevent the earlier
+memory buildup from recurring.
+
+The refill ran across two separate sessions (interrupted once by
+choice, to stop for the night, and resumed cleanly the next day using
+the script's built-in resumability) and completed all 599 questions.
+
+**Merging the results.** Built `merge_v2_results.py` to combine the
+original 1,074-question generation file with the 599-question refill
+(refill wins on any id collision, since it is guaranteed to have power
+data), and to merge the three separate power CSVs (the original run's
+log, plus two refill-session logs) into one combined file. Tested
+against a synthetic scenario with a known overlapping id and a
+known-uncovered response before running on real data, confirming the
+merge correctly prefers refill data and correctly identifies coverage.
+Result: 1,073 of 1,074 responses now have at least some power data in
+their time window -- essentially complete coverage, up from the
+original 43%.
+
+## E1-v2 final results
+
+Re-ran the labeler on the merged, fully-covered dataset. Final numbers,
+now with genuine full power coverage rather than a partial estimate:
+
+- 877 of 1,074 responses correct (81.7%): 412/434 factual (94.9%),
+  465/640 explain (72.7% -- lower because explain correctness requires
+  every required concept to appear, not just one accepted phrasing).
+- Average 180.1 tokens wasted per correct response after the earliest
+  safe stopping point (maximum 721), 157,991 tokens total.
+- 87,938.96 J wasted after the earliest safe stop, computed over all
+  877 correct responses (full coverage, not the earlier 380-response
+  partial estimate).
+- 13,569 boundaries from multi-sentence responses (the genuine decision
+  points), of which 3,623 are labeled unsafe -- roughly 240x more
+  negative examples than the original 304-question set's fewer-than-20.
+- Entropy-threshold baseline, re-measured on this much larger sample:
+  precision holds around 0.74-0.77 across the threshold sweep (recall
+  climbing 0.34 to 1.00), a substantial and consistent drop from the
+  0.96-0.97 measured on the smaller set. Read as the more trustworthy
+  number -- the earlier result was likely inflated by how few hard
+  cases it contained.
+
+Built `make_figures_v2.py`, generating a waste-by-question-type
+comparison, a response-length-by-type histogram, the v2 entropy
+precision/recall curve (recomputed directly from the boundary labels
+rather than parsed from report text, so the figure is self-verifying),
+and a direct v1-vs-v2 entropy overlay -- the single figure that makes
+the "small dataset gave an inflated result" finding visible at a
+glance. Wrote the full result into the paper as a new subsection
+(Section 6.4, "A larger, harder open-ended set"), positioned as a
+follow-up that both confirms and sharpens the original E1 finding
+rather than replacing it.
+
+**Where this leaves the project.** The dataset bottleneck that limited
+every result since the probe pilot (too few negative examples to trust
+any precision/recall estimate) is now resolved: 3,623 real unsafe
+boundaries is enough to train and evaluate the probe with genuine
+statistical weight, and the bar it needs to clear -- entropy at roughly
+0.75 precision -- is now a solid, well-measured target rather than an
+artifact of a small sample. Retraining and evaluating the probe on this
+dataset is the next step.

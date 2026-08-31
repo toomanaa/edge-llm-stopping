@@ -1,0 +1,27 @@
+=== v2 summary numbers for the paper's prose ===
+
+responses: 1074, correct: 877
+  factual: 412/434 correct (94.9%)
+  explain: 465/640 correct (72.7%)
+with a safe early stop boundary: 877
+avg tokens generated AFTER earliest safe stop: 180.1 (max 721)
+total wasted tokens: 157991
+
+hard boundaries (multi-boundary responses): 13569
+  safe: 9946  unsafe: 3623
+
+estimated joules wasted after earliest safe stop: 87938.96 J
+  (computed over 877 responses with power coverage, out of 877 correct responses total --
+   power logger stopped partway through this run; joules figures cover only the 877-response subset with real power data, while token/entropy/accuracy figures above cover all 1074 responses)
+
+entropy-threshold baseline (stop if H<T), all boundaries:
+     T  precision   recall
+  0.05      0.766    0.336
+   0.1      0.764    0.387
+   0.2      0.760    0.447
+   0.3      0.756    0.495
+   0.5      0.752    0.581
+   0.8      0.747    0.719
+   1.2      0.741    0.914
+   1.8      0.740    1.000
+   2.5      0.740    1.000

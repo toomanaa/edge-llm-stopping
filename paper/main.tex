@@ -529,6 +529,75 @@ lower entropy through confidently generated phrasing.}
 \label{fig:entropy-trace}
 \end{figure}
 
+\subsection{A larger, harder open-ended set (E1-v2)}
+\label{sec:e1v2}
+The 304-question set had a problem we did not see coming: almost every
+response was a single sentence, so only a small minority of boundaries
+were genuinely ambiguous stopping points. Out of several hundred labeled
+boundaries, fewer than twenty were labeled unsafe. That is not enough to
+trust a precision-recall estimate, and we suspected it was not enough to
+give the entropy baseline a fair test either.
+
+So we built a second, larger question set: 1{,}074 questions, 434
+factual (same style as before) and 640 explain-or-why questions ("what
+causes X", "explain how X works"), chosen because they tend to produce
+longer answers with real stopping decisions throughout, not just at the
+end. There is no established ratio in the literature for a mixed
+factual/explanatory set like this -- factoid QA and non-factoid QA are
+usually treated as separate benchmark traditions. The 60/40 split toward
+explain questions was a choice made for this project's purpose, not a
+number pulled from prior work.
+
+877 of the 1{,}074 responses (81.7\%) were correct: 94.9\% of factual
+questions, 72.7\% of explain questions. The explain number is lower
+because an explain answer only counts once every required concept
+appears in the text, not just one accepted phrasing. Waste was far
+larger than in the smaller set. Correct responses ran on for an average
+of 180.1 tokens (as many as 721 in one case) past their earliest safe
+stopping point, 157{,}991 wasted tokens in total, an estimated
+87{,}939\,J across the 877 correct responses
+(Figure~\ref{fig:v2-waste-by-type}), with power data covering all 877 of
+them this time.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{figures/fig_v2_waste_by_type.pdf}
+\caption{Average tokens wasted after the earliest safe stopping point,
+factual versus explain-type questions, on the 1{,}074-question set.}
+\label{fig:v2-waste-by-type}
+\end{figure}
+
+More importantly, this set has real weight behind it. 13{,}569
+boundaries came from responses with more than one sentence, and 3{,}623
+of those were genuinely unsafe to stop at -- against fewer than twenty
+in the original set. Running the entropy-threshold baseline again on
+this larger set gives a different picture
+(Figure~\ref{fig:v1-vs-v2-entropy}). Precision sits around 0.74--0.77
+across the threshold sweep, well below the 0.96--0.97 we measured on the
+smaller set, while recall still climbs from about 0.34 to 1.00 over the
+same range. We take this as the more trustworthy number. A signal that
+looks strong on a handful of edge cases is not the same as one that
+holds up over thousands of them.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{figures/fig_v1_vs_v2_entropy.pdf}
+\caption{Entropy-threshold precision/recall on the original 304-question
+set versus the larger 1{,}074-question set. The larger set's much bigger
+supply of genuinely unsafe boundaries (3{,}623 versus under 20) reveals a
+meaningfully lower precision ceiling for entropy than the smaller set
+suggested.}
+\label{fig:v1-vs-v2-entropy}
+\end{figure}
+
+This changes what the learned probe in Section~\ref{sec:signal} needs to
+do. It is no longer enough to match a baseline that only looked strong
+because it was tested on so little data. With 3{,}623 real negative
+examples now available, there is enough to train and evaluate the probe
+properly, against a target -- entropy at roughly 0.75 precision -- that
+is finally a real, well-measured number instead of an artifact of a
+small sample.
+
 Entropy is therefore not a useless signal, as we
 originally suspected -- but it is also not a settled one. The interesting
 question is whether the learned probe described in Section~\ref{sec:signal}

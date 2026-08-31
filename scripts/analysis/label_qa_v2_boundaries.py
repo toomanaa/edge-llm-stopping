@@ -39,6 +39,17 @@ def load_power(csv_path):
         ts.append(float(t)); ws.append(float(w))
     return ts, ws
 
+def in_power_range(t0, t1, ts):
+    """True only if [t0, t1] falls inside the power log's actual recorded
+    span. Without this check, bisect-based joules() silently returns a
+    near-zero or wrong value for timestamps outside the logged range,
+    rather than correctly signaling "no data" -- caught by testing this
+    script against a synthetic partial-coverage case before running it
+    on real (partially-covered) data."""
+    if not ts:
+        return False
+    return ts[0] <= t0 and t1 <= ts[-1]
+
 def joules(ts, ws, t0, t1):
     i = bisect.bisect_left(ts, t0); j = bisect.bisect_right(ts, t1)
     total = 0.0
@@ -84,11 +95,14 @@ def main():
             row = {"id": r["id"], "boundary": b_idx, "tok_idx": tok_idx,
                    "safe_stop": ok, "delta_q": 0.0 if ok else 1.0,
                    "entropy_topk": ent, "type": qtype}
-            if pw:
+            if pw and in_power_range(r["t_start"], r["t_end"], pw[0]):
                 frac = off / max(len(text), 1)
                 t_b = r["t_start"] + (r["t_end"] - r["t_start"]) * frac
                 row["joules_so_far"] = joules(*pw, r["t_start"], t_b)
                 row["joules_total"] = joules(*pw, r["t_start"], r["t_end"])
+                row["has_power"] = True
+            elif pw:
+                row["has_power"] = False
             rows.append(row)
             if ok and earliest is None:
                 earliest = (b_idx, tok_idx)
@@ -125,13 +139,21 @@ def main():
 
     if pw and rows:
         wasted_j = 0.0
+        n_energy_responses = 0
         for rid, rws in by_id.items():
             safe = [w for w in rws if w["safe_stop"]]
             if not safe or "joules_total" not in rws[0]:
                 continue
             earliest_row = min(safe, key=lambda w: w["boundary"])
             wasted_j += rws[0]["joules_total"] - earliest_row.get("joules_so_far", 0.0)
+            n_energy_responses += 1
         report.append(f"\nestimated joules wasted after earliest safe stop: {wasted_j:.2f} J")
+        report.append(f"  (computed over {n_energy_responses} responses with power "
+                      f"coverage, out of {stats['full_correct']} correct responses total --")
+        report.append(f"   power logger stopped partway through this run; joules figures "
+                      f"cover only the {n_energy_responses}-response subset with real "
+                      f"power data, while token/entropy/accuracy figures above cover all "
+                      f"{stats['total']} responses)")
 
     if entropy_pairs:
         report.append("\nentropy-threshold baseline (stop if H<T), all boundaries:")
