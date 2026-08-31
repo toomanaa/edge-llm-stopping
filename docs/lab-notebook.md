@@ -541,3 +541,55 @@ statistical weight, and the bar it needs to clear -- entropy at roughly
 0.75 precision -- is now a solid, well-measured target rather than an
 artifact of a small sample. Retraining and evaluating the probe on this
 dataset is the next step.
+
+## Retraining the probe on v2: the real comparison
+
+Built `probe_training_v2.ipynb`, a substantial redesign of the pilot
+notebook rather than a small patch. Sampled 4,518 boundaries from the
+v2 set's 13,569 hard boundaries, grouped by response (so a response's
+boundaries never split across the sample boundary itself). Rather than
+a single train/test split, used a proper grouped 70/15/15
+train/validation/test split, repeated across 5 random seeds, with the
+validation set used for model selection each time and the test set
+touched only once, at the end, per seed -- addressing the exact
+weakness (single split, tiny test set) that made the pilot's result
+untrustworthy.
+
+Before running this on real data, stress-tested the new sampling and
+splitting logic against synthetic data covering the full pipeline at
+realistic scale (~4,500 boundaries, 200 simulated response groups):
+confirmed zero data leakage across all 5 seeds (no response id
+appearing in more than one split) and confirmed every example was
+accounted for in each split, for every seed. Also ran the full
+train/validate/test/aggregate pipeline once end-to-end on synthetic
+data to confirm no runtime errors before handing the notebook over.
+
+**Result: test-set average precision 0.890 ± 0.045 across the 5 seeds**
+(worst seed 0.833, best 0.964), on test sets of 693-779 boundaries with
+132-234 genuinely unsafe examples each. Every single seed beat the
+entropy baseline's precision ceiling of roughly 0.74-0.77 measured on
+the same v2 data, by a similar margin each time. The precision-recall
+curve sits visibly above entropy's across nearly the whole recall
+range, and the five individual seed curves overlay closely, showing the
+result is not an artifact of one favorable split.
+
+This is a different situation from the pilot: that result rested on 4-6
+negative test examples and was not trustworthy either way; this one
+rests on hundreds of negative examples per seed, five independent
+splits, and a validation-based model-selection step the pilot never
+had. Written into the paper as Section 6.5, replacing the earlier TODO
+placeholder, with the honest caveat that average precision and
+precision-at-fixed-recall are related but not identical measurements,
+stated explicitly rather than treating the two curves as trivially
+comparable.
+
+Along the way, needed a `.pdf` version of `fig_v1_vs_v2_entropy`
+(generated as `.png` and `.pdf` together by `make_figures_v2.py` on the
+Pi, but only the `.png` had been carried over locally) -- rather than
+reconnect to the Pi, converted it directly in Colab with Pillow. Also
+hit Colab's ordinary session-storage behavior: a `files.download(...)`
+call can need to be re-run if it does not fire the first time, and
+anything not downloaded is lost if the session resets. Both handled as
+small appended utility cells in the notebook (Sections 11-12) rather
+than undocumented one-off snippets, so the full record of what was run
+stays in one place.

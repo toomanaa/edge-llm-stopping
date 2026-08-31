@@ -607,15 +607,55 @@ one. That comparison is the subject of Section~\ref{sec:e1}.
 
 \subsection{E1: Signal validity}
 \label{sec:e1}
-Building on Section~\ref{sec:e1prelim}, the full signal-validity
-experiment measures the correlation of each estimator S1--S3 with the
-ground-truth $\Delta Q$, together with the precision and recall of
-safe-stop decisions and the coverage of the conformal wrapper. This
-experiment gates the rest: the system-level claims in this paper are
-contingent on the learned probe (S1) improving on the entropy baseline
-(S3) established above, not merely matching it.
-\todo{Results: table of per-task precision/recall for S1, S2, S3 once the
-probe is trained.}
+Building on Section~\ref{sec:e1prelim} and the larger set in
+Section~\ref{sec:e1v2}, this experiment checks whether the learned probe
+(S1) actually improves on the entropy baseline (S3) established there,
+rather than just matching it. The bar is not low: on the 13{,}569-boundary
+v2 set, entropy holds a precision of roughly 0.74--0.77 across its
+recall range, and any claim for the probe needs to clear that with real
+data behind it, not a handful of edge cases.
+
+We trained S1 -- a probe of under 200{,}000 parameters, reading the
+frozen model's last-layer hidden state at each boundary -- on a sample
+of 4{,}518 boundaries drawn from the v2 set, grouped by response so no
+response's boundaries were split across the sample. For evaluation we
+split those boundaries 70/15/15 into train, validation, and test sets,
+again grouped by response, and repeated this five times with different
+random seeds: each time using the validation set to pick the model and
+the test set only for the final number, so no single split determines
+the result. Average precision on the held-out test set came out to
+0.890, with a standard deviation of 0.045 across the five seeds (worst
+seed 0.833, best 0.964), against test sets ranging from 693 to 779
+boundaries with 132 to 234 of them genuinely unsafe.
+
+Every one of the five seeds beat entropy's precision ceiling, and by a
+similar margin each time (Figure~\ref{fig:probe-v2-vs-entropy}): the
+probe holds around 0.85--0.90 precision across most of its recall range,
+compared to entropy's 0.74--0.77 over a comparable range. Average
+precision summarizes the whole curve into one number and precision at a
+fixed recall point is not quite the same measurement, so we do not treat
+the two numbers as directly interchangeable, but the curves in the
+figure make the comparison directly, and the probe's curve sits above
+entropy's almost everywhere it is defined.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/fig_probe_v2_vs_entropy.pdf}
+\caption{Precision-recall curves for the learned probe (S1) against the
+entropy baseline (S3) on the v2 dataset. The bold blue line is the
+best-validation-AP seed; the five faint blue lines are the other four
+seeds, showing the result is not the product of one favorable split.}
+\label{fig:probe-v2-vs-entropy}
+\end{figure}
+
+This is enough to say the probe is doing something entropy cannot: it
+is not simply recovering the same information from a different angle.
+We had trained a smaller pilot version of this probe earlier, on 447
+boundaries from the original 304-question set, and it looked roughly
+comparable to entropy there -- but that test set had only four negative
+examples, not enough to tell a real difference from noise. The result
+here, on hundreds of negative examples per seed, is the first version of
+this comparison we are willing to stand behind.
 
 \subsection{E2: Quality against measured energy}
 Sweeping $\lambda$, we report task quality against measured joules per
