@@ -22,7 +22,7 @@ Usage:
         --out out/live_controller_results.jsonl \\
         --probe probe_weights.npz --threshold 0.7 --limit 20
 """
-import argparse, json, re, time, pathlib, urllib.request
+import argparse, json, re, sys, time, pathlib, urllib.request
 from correctness import is_correct
 from probe_inference import Probe
 
@@ -52,7 +52,17 @@ def chat_prompt(question):
 def call_completion(prompt, url, n_predict):
     body = json.dumps({"prompt": prompt, "n_predict": n_predict,
                        "temperature": 0.0, "stream": False,
-                       "cache_prompt": False}).encode()
+                       "cache_prompt": True}).encode()
+    # cache_prompt=True is the fix for a real, measured problem: with it
+    # False, every completion call re-processes the ENTIRE accumulated
+    # prompt from scratch rather than reusing the already-computed
+    # context and only processing what's new. A full 1,074-question run
+    # measured an effective throughput of 2.67 words/sec against a real
+    # generation speed of ~11 words/sec -- a 4.1x overhead factor, with
+    # 76% of total wall-clock time spent on repeated re-processing
+    # rather than actual generation. That run's energy numbers are not
+    # usable as a result: it measured this overhead, not the underlying
+    # stopping decision's real cost.
     req = urllib.request.Request(url + "/completion", data=body,
                                  headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=120) as r:
@@ -60,7 +70,8 @@ def call_completion(prompt, url, n_predict):
 
 
 def call_embedding(text, url):
-    body = json.dumps({"content": text, "pooling": "none"}).encode()
+    body = json.dumps({"content": text, "pooling": "none",
+                       "cache_prompt": True}).encode()
     req = urllib.request.Request(url + "/embeddings", data=body,
                                  headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -85,7 +96,7 @@ def latest_boundary_offset(text):
 def generate_with_live_stopping(question, answers, match_mode, url, probe,
                                 threshold, chunk_tokens=20,
                                 max_total_tokens=800, landing_tokens=15,
-                                debug=False):
+                                check_every_n=2, debug=False):
     """The actual controller loop. Returns a dict with the final text,
     whether it stopped early (via the probe) or ran to natural
     completion, how many boundary checks were made, timing, AND whether
@@ -93,16 +104,31 @@ def generate_with_live_stopping(question, answers, match_mode, url, probe,
     savings numbers alone do not tell us if the probe is stopping at
     genuinely safe points or just early ones.
 
-    Checks EVERY new sentence boundary as it appears in the accumulated
-    text, not just whether the raw chunk happened to end at one -- see
-    latest_boundary_offset() for why this matters. If the probe says
-    stop, any text generated past that boundary (the "overshoot" from
-    finishing the current chunk) is discarded, so the final output ends
-    cleanly at the sentence the decision was actually made at."""
+    Checks every Nth new sentence boundary (check_every_n), not every
+    single one. This is a direct response to a measured problem: a
+    diagnostic comparing /completion and /embeddings call latency on
+    identical growing text found /completion caching works correctly
+    (flat latency, ~0.18s regardless of length) but /embeddings latency
+    grows roughly linearly with text length (0.26s to 1.58s over 8
+    steps) -- the cache_prompt flag has no effect on that endpoint in
+    this server version. Since a boundary check requires one embeddings
+    call per check, and later checks in a long response reprocess an
+    increasingly long prefix, checking every boundary made the
+    embeddings overhead the dominant cost of the whole controller,
+    enough to erase the energy savings from stopping early at all (a
+    full-scale run measured negative net savings before this fix).
+    Checking every Nth boundary instead directly cuts the number of
+    these expensive calls.
+
+    If the probe says stop, any text generated past the triggering
+    boundary (the "overshoot" from finishing the current chunk, plus
+    any skipped intervening boundaries) is discarded, so the final
+    output still ends cleanly at a real sentence."""
     prompt = chat_prompt(question)
     accumulated = ""
     last_checked_offset = 0
     boundary_checks = 0
+    boundaries_since_check = 0
     stopped_early = False
     approx_tokens_used = 0
     t_start = time.time()
@@ -119,11 +145,17 @@ def generate_with_live_stopping(question, answers, match_mode, url, probe,
         accumulated += chunk
         approx_tokens_used += chunk_tokens
 
-        # Check every boundary that appeared since the last check, not
-        # just the very end of the current chunk.
+        # Check every Nth boundary that appeared since the last check,
+        # not every single one -- see the docstring above for why.
         offs = [m.start() for m in BOUNDARY.finditer(accumulated)]
         new_offs = [o for o in offs if o > last_checked_offset]
         for off in new_offs:
+            boundaries_since_check += 1
+            if boundaries_since_check < check_every_n:
+                last_checked_offset = off  # advance past this boundary,
+                continue                    # but skip the expensive check
+
+            boundaries_since_check = 0
             boundary_checks += 1
             prefix = accumulated[:off]
             try:
@@ -168,6 +200,23 @@ def generate_with_live_stopping(question, answers, match_mode, url, probe,
     }
 
 
+def available_memory_mb():
+    """Read available memory from /proc/meminfo -- same approach used in
+    run_qa_v2_generation_safe.py, which caught the memory buildup that
+    corrupted the Pi's Python installation during the unappwatched
+    overnight v2 generation run. The live controller makes MORE HTTP
+    requests per question than that script did (multiple /embeddings
+    calls per response, not just one /completion call), so the same
+    risk applies here, arguably more so."""
+    try:
+        for line in open("/proc/meminfo"):
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) / 1024
+    except Exception:
+        pass
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True)
@@ -178,10 +227,20 @@ def main():
                     help="stop when P(safe to stop) >= this value")
     ap.add_argument("--chunk-tokens", type=int, default=20,
                     help="tokens requested per generation step")
+    ap.add_argument("--check-every-n", type=int, default=2,
+                    help="only call the probe every Nth sentence boundary, "
+                         "not every one -- reduces expensive /embeddings "
+                         "calls, which were found to dominate overhead")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--debug", action="store_true",
                     help="print the probe's raw confidence at every "
                          "boundary check, to diagnose threshold behavior")
+    ap.add_argument("--batch-size", type=int, default=100,
+                    help="pause for a server restart after this many "
+                         "questions in a single invocation")
+    ap.add_argument("--min-free-mb", type=float, default=1500,
+                    help="if available memory drops below this, stop and "
+                         "recommend a server restart before continuing")
     args = ap.parse_args()
 
     probe = Probe(args.probe)
@@ -200,29 +259,49 @@ def main():
 
     n_correct = 0
     n_total = 0
+    processed_this_batch = 0
     with open(outp, "a") as f:
         for i, ex in enumerate(prompts):
             qid = ex.get("id", f"q{i}")
             if qid in done:
                 continue
+
+            mem = available_memory_mb()
+            if mem is not None and mem < args.min_free_mb:
+                print(f"\n*** STOPPING: available memory is {mem:.0f} MB, "
+                     f"below the {args.min_free_mb:.0f} MB safety threshold. ***")
+                print("*** Restart llama-server now (Ctrl-C it, then start "
+                     "it again), then re-run this exact command to resume. ***")
+                sys.exit(2)  # signals "paused, needs a restart" to a wrapper script
+
             result = generate_with_live_stopping(
                 ex["question"], ex["answers"], ex["match_mode"],
                 args.url, probe, args.threshold,
-                chunk_tokens=args.chunk_tokens, debug=args.debug)
+                chunk_tokens=args.chunk_tokens,
+                check_every_n=args.check_every_n, debug=args.debug)
             result["id"] = qid
             f.write(json.dumps(result) + "\n"); f.flush()
             n_total += 1
             n_correct += int(result["correct"])
+            processed_this_batch += 1
             tag = "STOPPED-EARLY" if result["stopped_early_by_probe"] else "natural-end"
             correct_tag = "CORRECT" if result["correct"] else "WRONG"
+            mem_str = f", mem_avail={mem:.0f}MB" if mem is not None else ""
             print(f"[{i+1}/{len(prompts)}] {qid} [{tag}] [{correct_tag}] "
                  f"{result['n_words_approx']} words, "
                  f"{result['boundary_checks']} boundary checks, "
-                 f"{result['wall_seconds']:.1f}s  "
+                 f"{result['wall_seconds']:.1f}s{mem_str}  "
                  f"(running accuracy: {n_correct}/{n_total} = "
                  f"{n_correct/n_total*100:.1f}%)")
 
+            if processed_this_batch >= args.batch_size:
+                print(f"\n*** Batch of {args.batch_size} complete. "
+                     f"Restart llama-server now (for memory hygiene), "
+                     f"then re-run this exact command to continue. ***")
+                sys.exit(2)  # same "paused, needs a restart" signal
+
     print("done")
+    sys.exit(0)  # signals "genuinely finished" to a wrapper script
 
 
 if __name__ == "__main__":

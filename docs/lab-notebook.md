@@ -700,8 +700,7 @@ ceiling is still far below what the small v1 sample suggested, and the
 probe still has real work to do -- but the exact numbers in
 Section 6.4 need updating to match.
 
-**Live controller result after all three fixes:** on the same 10-question
-smoke test used throughout this debugging pass, accuracy climbed from
+**Live controller result after all three fixes:** on the same 10-question smoke test used throughout this debugging pass, accuracy climbed from
 60% to 80%, with the two remaining wrong answers being genuine cases
 (one real premature stop before a required concept appeared, one case
 where the model's explanation took a different, equally plausible
@@ -709,3 +708,105 @@ route that never used the expected concept words at all) rather than
 grading artifacts. Not yet run at full scale; the next step is a full
 run over the v2 dataset with the corrected pipeline, which is what
 E2's quality-vs-energy comparison will actually be built on.
+
+## Calibrating the stopping threshold at scale
+
+Before committing to a full 1,074-question run, calibrated the
+threshold properly rather than trusting the 10-question smoke test's
+80%. A 30-question slice at threshold 0.7 gave only 60-66% accuracy;
+0.8 and 0.9 both gave an identical 73.3% (same questions right and
+wrong at both), a sign the probe's confidence on the remaining bad
+cases was already far above 0.9, not marginally over it. Diagnosed the
+persisting failures directly: compared each live "wrong" result against
+the SAME question's already-known offline (full-length) correctness,
+finding exactly half were structurally unfixable by any threshold (the
+model gets them wrong even given unlimited length) and half were
+genuinely fixable (the model can answer correctly if allowed to run
+longer). Pushing to threshold 0.99 recovered most of the fixable cases,
+giving 83.3% accuracy on a 30-question calibration slice with the
+generation total still 65% smaller than the offline baseline -- a real
+operating point, though a larger 100-question follow-up check
+(necessary since the 30-question estimate turned out optimistic)
+settled the honest number closer to 74-75%. Locked in threshold 0.99
+as the calibrated setting for the full run.
+
+## The full 1,074-question run, and a serious problem it revealed
+
+Built `run_full_orchestrated.sh` to automate the ~10 manual
+restart-server cycles a full run would otherwise need: it starts
+llama-server, polls `/health` until ready, runs the controller for one
+batch, checks its exit code (added distinct `sys.exit(0)` for genuine
+completion vs `sys.exit(2)` for a batch/memory pause, replacing the
+previous plain `return`), and loops automatically. Verified both exit
+paths with real subprocess tests (not just static inspection) before
+trusting it to run unattended for hours. Launched via `nohup ... &` so
+it would survive SSH disconnects.
+
+The full run completed in full: 1,074/1,074 questions, ~9.86 hours,
+9 automatic server restarts, zero manual intervention needed after
+launch -- genuinely the first complete, real, hands-off overnight-scale
+run since the memory-crash incident earlier in the project, and the
+orchestration held up.
+
+**Result: 796/1,074 correct (74.1%), 622/1,074 (57.9%) stopped early by
+the probe, and — computed from real measured power, not a word-count
+estimate — the live controller used slightly *more* energy than the
+offline no-stopping baseline: -3.0% "savings."** This is a serious,
+counterintuitive result on a system whose whole purpose is to save
+energy, and it needed to be understood rather than reported as-is.
+
+**Diagnosis.** Computed the run's effective throughput: 94,769 words
+generated over 35,508 seconds of wall-clock time is 2.67 words/sec,
+against a known real generation speed of roughly 11 words/sec measured
+earlier in the project -- a 4.1x overhead factor, meaning roughly 76%
+of the entire 9.86-hour run was spent on something other than actual
+token generation. Traced this to `"cache_prompt": False` being set on
+every `/completion` call in `live_controller.py`, forcing the server to
+re-process the entire accumulated prompt from scratch on every one of
+the many small generation chunks and boundary checks per response,
+rather than reusing already-computed context.
+
+Set `cache_prompt: True` on both `/completion` and `/embeddings` calls
+and re-tested the same 20 questions: throughput improved to 4.13
+words/sec (a real 55% gain) but energy savings were still negative
+(-1.1%) -- an improvement, but not the fix. Built `diagnose_caching.py`
+to isolate the two endpoints directly: sent a sequence of growing
+prefixes of identical text to `/completion` and `/embeddings`
+separately and timed each call. `/completion` latency stayed flat
+(0.21s to 0.18s across 8 steps of growing text, confirming its caching
+genuinely works); `/embeddings` latency grew almost linearly with text
+length (0.26s to 1.58s, roughly 6x) -- confirming `cache_prompt` has no
+effect on that endpoint in this llama.cpp server version, and every
+single boundary check pays a full, ever-larger re-prefill cost
+regardless of the setting. With some responses making 14+ boundary
+checks, this was structurally the dominant cost of the entire
+controller, not a tunable inefficiency.
+
+**Fix: check less often, not every sentence boundary.** Added a
+`check_every_n` parameter (default 2) that only spends an actual
+`/embeddings` call and probe evaluation on every Nth new sentence
+boundary, skipping the ones in between while still advancing past them
+correctly. Verified with a controlled test (6 sentences,
+`check_every_n=2`) that the probe is called exactly 3 times instead of
+6, and that a triggered stop still truncates the output at the correct
+sentence even when the triggering check was several boundaries after
+the last one actually evaluated.
+
+**Validated on the same 20-question sample, this time with real power
+logging: 29.6% measured energy savings, 70.0% accuracy** (down modestly
+from 75.0% at the finer-grained checking rate, an expected and
+reasonable cost of checking less often). This is the first positive,
+real, measured energy result for the live controller, and the honest
+number to build the full-scale claim on -- notably smaller than the
+69.1% word-count estimate, which never accounted for the controller's
+own runtime cost. That gap is itself worth stating plainly in the paper
+rather than hidden: the true cost of a live stopping decision is not
+free, and reporting the token-savings number alone would have
+overstated the system's real benefit.
+
+**Not yet run at full scale with this fix** -- the next session's first
+step. The negative-result run (`out/live_full_t99.jsonl`,
+`out/live_full_t99_power.csv`) is being kept as a record of the
+overhead problem and its diagnosis, not deleted, since the debugging
+path is as much a part of this project's honest record as the eventual
+positive result.
