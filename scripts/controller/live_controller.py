@@ -93,10 +93,45 @@ def latest_boundary_offset(text):
     return offsets[-1] if offsets else None
 
 
+def estimate_cost_joules(context_chars, avg_power_w=7.0):
+    """Estimated energy cost (joules) of the next boundary check's
+    /embeddings call, as a function of how much accumulated text it
+    would need to process. Fitted from real measured data
+    (diagnose_caching.py): a sequence of growing text prefixes sent to
+    /embeddings showed latency growing linearly with character count
+    (58 to 536 chars, 0.26s to 1.58s, max residual 0.03s from a linear
+    fit) -- confirming the embeddings endpoint reprocesses the whole
+    prefix from scratch every call, with no caching benefit. Seconds
+    are converted to joules using a representative average power draw
+    measured earlier in the project (idle ~5-6W, active decode ~7-8W);
+    this is an approximation, not a per-call power measurement, and is
+    documented as such -- refining it with power-log-aligned per-call
+    measurements is a natural follow-up, not done here."""
+    seconds = 0.09315 + 0.002811 * context_chars
+    return max(0.0, seconds) * avg_power_w
+
+
+def dynamic_threshold(context_chars, lam, min_threshold=0.5, max_threshold=0.999):
+    """The paper's own formalization (Section 4): stop when the
+    predicted quality gain of continuing is less than the calibrated
+    exchange rate lambda times the marginal cost of continuing. Recast
+    as a confidence bar: rearranging that inequality gives a threshold
+    that should RELAX (get easier to clear) as the next step's cost
+    grows, rather than staying fixed regardless of how far into a long,
+    increasingly expensive response the controller already is -- which
+    is what the flat threshold used for the validated 0.99/check_every_n
+    result does not do. Clamped to a sane range so a very large or very
+    small computed value never produces a threshold above 1 or so low
+    it stops on noise."""
+    cost = estimate_cost_joules(context_chars)
+    raw = 1.0 - lam * cost
+    return min(max_threshold, max(min_threshold, raw))
+
+
 def generate_with_live_stopping(question, answers, match_mode, url, probe,
                                 threshold, chunk_tokens=20,
                                 max_total_tokens=800, landing_tokens=15,
-                                check_every_n=2, debug=False):
+                                check_every_n=2, debug=False, lam=None):
     """The actual controller loop. Returns a dict with the final text,
     whether it stopped early (via the probe) or ran to natural
     completion, how many boundary checks were made, timing, AND whether
@@ -172,16 +207,27 @@ def generate_with_live_stopping(question, answers, match_mode, url, probe,
                 p_safe = 0.0
                 print(f"    [probe call failed: {e}, continuing generation]")
 
-            if p_safe >= threshold:
+            # Use the paper's cost-aware threshold if a calibrated
+            # exchange rate (lam) was provided; otherwise fall back to
+            # the fixed, already-validated threshold exactly as before
+            # -- this keeps the default behavior identical to tonight's
+            # tested 0.99/check_every_n=2 result, with the dynamic mode
+            # as an explicit opt-in, not a silent change.
+            if lam is not None:
+                active_threshold = dynamic_threshold(len(prefix), lam)
+            else:
+                active_threshold = threshold
+
+            if p_safe >= active_threshold:
                 accumulated = prefix  # discard any overshoot past this point
                 stopped_early = True
                 if debug:
                     print(f"    [boundary {boundary_checks}: p_safe={p_safe:.4f} "
-                         f">= {threshold} -> STOP here: {prefix[-60:]!r}]")
+                         f">= {active_threshold:.4f} -> STOP here: {prefix[-60:]!r}]")
                 break
             elif debug:
                 print(f"    [boundary {boundary_checks}: p_safe={p_safe:.4f} "
-                     f"< {threshold} -> continue]")
+                     f"< {active_threshold:.4f} -> continue]")
             last_checked_offset = off
 
         if stopped_early:
@@ -231,6 +277,13 @@ def main():
                     help="only call the probe every Nth sentence boundary, "
                          "not every one -- reduces expensive /embeddings "
                          "calls, which were found to dominate overhead")
+    ap.add_argument("--lambda-cost", type=float, default=None,
+                    help="if set, use a cost-aware dynamic threshold "
+                         "(1 - lambda*cost) instead of the fixed "
+                         "--threshold value; the threshold relaxes as "
+                         "the response grows and the next check gets "
+                         "more expensive. Default (unset) reproduces "
+                         "the validated fixed-threshold behavior exactly.")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--debug", action="store_true",
                     help="print the probe's raw confidence at every "
@@ -278,7 +331,8 @@ def main():
                 ex["question"], ex["answers"], ex["match_mode"],
                 args.url, probe, args.threshold,
                 chunk_tokens=args.chunk_tokens,
-                check_every_n=args.check_every_n, debug=args.debug)
+                check_every_n=args.check_every_n, debug=args.debug,
+                lam=args.lambda_cost)
             result["id"] = qid
             f.write(json.dumps(result) + "\n"); f.flush()
             n_total += 1

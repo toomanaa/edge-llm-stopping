@@ -667,12 +667,52 @@ here, on hundreds of negative examples per seed, is the first version of
 this comparison we are willing to stand behind.
 
 \subsection{E2: Quality against measured energy}
-Sweeping $\lambda$, we report task quality against measured joules per
-request, and against latency, for all systems. We consider the method
-successful only if its frontier strictly dominates the baselines over some
-range of operating points; a single favorable point is not sufficient
-evidence.
-\todo{Figure: Pareto plot; Table: operating points at $\le$1\,pp loss.}
+\label{sec:e2}
+We implemented the controller described in Section~\ref{sec:memory} on
+the Pi: the trained probe from Section~\ref{sec:e1}, exported as plain
+numpy weights and run without any scikit-learn or PyTorch dependency
+on the device, deciding stop-or-continue live during generation by
+querying llama.cpp's \texttt{/embeddings} endpoint at each admissible
+boundary. Getting an honest number here took two real attempts. Every
+first pass, using the fixed calibrated threshold from
+Section~\ref{sec:method} and checking every sentence boundary, measured
+\emph{negative} energy savings: the controller used slightly more
+energy than generating every response to completion. A diagnostic
+comparing \texttt{/completion} and \texttt{/embeddings} latency on
+identical, growing text found the cause: \texttt{/completion} calls
+benefit from the server's prompt cache as expected (latency flat across
+a range of context lengths), but \texttt{/embeddings} calls do not --
+latency there grew roughly linearly with context length, meaning every
+boundary check reprocessed the entire response from scratch, and later
+checks in a long response paid an ever-larger cost. With some responses
+making a dozen or more checks, this made the checking mechanism itself
+the dominant energy cost, large enough to erase the savings from
+stopping early at all.
+
+The fix was to check less often: evaluating the probe at every second
+sentence boundary rather than every one, which roughly halves the
+number of these expensive calls. On the full 1{,}074-question set, the
+corrected controller was correct on 789 responses (73.5\%, against
+roughly 82\% for the same questions run to natural completion) and
+stopped early on 590 of them (54.9\%). Measured directly from the
+power trace, the controller used 146{,}313.55\,J against 246{,}665.86\,J
+for the same 1{,}074 questions generated without any stopping mechanism
+-- a 40.7\% reduction, computed the same way as every other energy
+figure in this paper, from a metered power trace integrated over each
+response's real timestamps, not estimated from token or word counts.
+We consider this the honest number: an earlier estimate based on
+words generated, ignoring the controller's own overhead, suggested a
+much larger 69\,\% reduction, and the gap between the two is itself
+worth reporting -- the cost of making the stopping decision is real and
+not small, and a paper that only reports the token-count savings would
+overstate what the system actually delivers.
+
+\todo{Remaining for a complete E2: the same measured comparison for
+tuned \texttt{max\_tokens}, entropy thresholding, and DEER/LASER-style
+baselines, computed retroactively from the existing offline power
+traces where possible, to place the controller's single operating
+point on a full quality-energy frontier rather than reporting it in
+isolation.}
 
 \subsection{E3: Battery dynamics and fail-open}
 \label{sec:e3}

@@ -18,7 +18,7 @@ set -u
 
 MODEL="models/llama-3.2-1b-instruct-q4_k_m.gguf"
 DATA="data/qa_v2.jsonl"
-OUT="out/live_full_t99.jsonl"
+OUT="out/live_full_v2.jsonl"
 PROBE="probe_weights.npz"
 THRESHOLD=0.99
 BATCH_SIZE=100
@@ -26,6 +26,19 @@ PORT=8080
 MAX_RESTARTS=30   # safety valve: never loop forever even if something is stuck
 
 restart_count=0
+
+# Diagnostics: print exactly what directory and files this script sees
+# before doing anything else. A silent "done" with no questions
+# processed and no output file created (observed once, cause not yet
+# confirmed) is consistent with a working-directory or path mismatch
+# that these checks are meant to catch immediately instead of guessing.
+echo "=== $(date): diagnostic check ==="
+echo "working directory: $(pwd)"
+echo "DATA=$DATA  -> $([ -f "$DATA" ] && echo "EXISTS ($(wc -l < "$DATA") lines)" || echo "MISSING")"
+echo "PROBE=$PROBE  -> $([ -f "$PROBE" ] && echo "EXISTS" || echo "MISSING")"
+echo "MODEL=$MODEL  -> $([ -f "$MODEL" ] && echo "EXISTS" || echo "MISSING")"
+echo "controller/live_controller.py -> $([ -f "controller/live_controller.py" ] && echo "EXISTS" || echo "MISSING")"
+echo "=== end diagnostic check ==="
 
 while [ $restart_count -lt $MAX_RESTARTS ]; do
   echo "=== $(date): starting llama-server (restart #$restart_count) ==="
