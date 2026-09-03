@@ -707,6 +707,18 @@ worth reporting -- the cost of making the stopping decision is real and
 not small, and a paper that only reports the token-count savings would
 overstate what the system actually delivers.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_e2_controller_vs_baseline.pdf}
+\caption{Measured energy and task accuracy for the live controller
+against the no-stopping baseline, on the same 1{,}074 questions. Energy
+is integrated from a real power trace over each response's actual
+timestamps; accuracy is computed with the same checker used throughout
+this paper. The controller trades 8.4 percentage points of accuracy
+for a 40.7\% reduction in measured energy.}
+\label{fig:e2-controller-vs-baseline}
+\end{figure}
+
 \todo{Remaining for a complete E2: the same measured comparison for
 tuned \texttt{max\_tokens}, entropy thresholding, and DEER/LASER-style
 baselines, computed retroactively from the existing offline power
