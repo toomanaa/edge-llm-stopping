@@ -871,3 +871,84 @@ reduction at a real but modest accuracy cost (73.5% vs. roughly 82%
 for the unstopped baseline) -- a result earned by finding and fixing a
 regression that would otherwise have gone unnoticed, not by reporting
 the first number that came out of the pipeline.
+
+## Deciding what E2 actually needs to compare against
+
+Before building DEER and LASER as empirical baselines, checked what
+those methods actually do, from the primary sources rather than from
+memory. DEER (Yang et al., 2025) does not use entropy or hidden
+states: it watches for specific reasoning-transition tokens ("Wait",
+"Alternatively", "Let me check") that CoT-style reasoning models
+naturally produce, forces a trial answer at each one, and measures
+confidence from the model's own token probabilities on that induced
+answer, against a fixed threshold (their default: 0.95). LASER (2026)
+builds on the same induced-answer-confidence signal but replaces the
+fixed threshold with one that responds to real-time server queue
+load, via a tanh-shaped adjustment around a base value.
+
+Concluded these are not directly comparable to this paper's setting,
+and said so explicitly rather than forcing a comparison: both were
+designed for a different decision point (truncating hidden reasoning
+before an answer starts, not deciding when a visible answer is
+already-complete) and assume a model that naturally produces
+transition tokens ours does not; LASER's core mechanism additionally
+assumes a multi-request serving queue that does not exist on a single
+edge device. Positioning them as related work with an axis-of-novelty
+argument (already how Section~\ref{sec:related} frames it) is more
+defensible than an adapted reimplementation a reviewer could
+reasonably contest as not really being DEER or LASER at all. Agreed
+with the plan to keep the primary empirical comparison to methods that
+share this paper's exact problem (fixed max\_tokens, entropy
+threshold, our controller), and to revisit a DEER-inspired
+induced-answer signal only if it turns out to be a small, clean
+addition -- not yet built.
+
+## The real baseline comparison, computed without new Pi runtime
+
+Built `simulate_baselines.py` to compute fixed-max\_tokens and
+entropy-threshold outcomes retroactively from data already collected
+for the offline v2 analysis -- no live experiments needed, since every
+sentence boundary's token position, entropy, and (via the existing
+power trace) energy cost was already on disk. Both policies decide at
+the same sentence-boundary granularity as every other method in this
+paper, keeping the comparison fair rather than giving a token-level
+policy a resolution advantage nothing else has. For the ~194 of 1,074
+questions that were wrong even at full length (and so never appear in
+the boundary labels), every policy is charged that response's full
+energy and a wrong verdict identically, so this cannot bias the
+comparison toward any one method.
+
+Validated the simulation logic against hand-traceable synthetic data
+before trusting it on real numbers: confirmed the max\_tokens sweep
+produces a strictly monotonic accuracy/energy curve that correctly
+plateaus once the token budget exceeds the longest response, and
+confirmed the entropy sweep produces the correct *non*-monotonic
+pattern (accuracy can fall as the threshold loosens, once boundaries
+that are not the true safe point start qualifying) -- both traced by
+hand against the synthetic data's known structure before running on
+real data.
+
+**Real result, full 1,074-question set.** Fixed max\_tokens, swept from
+30 to 500 tokens, traces a smooth curve from 46.1% accuracy at 57.3 kJ
+up to 81.7% at 238.0 kJ, approaching but never quite reaching the
+no-stopping baseline (81.9% at 246.7 kJ). Entropy threshold behaves
+differently: even at its most conservative setting it never exceeds
+66.4 kJ, and accuracy *falls* as the threshold relaxes, from 52.0% down
+to 42.4% -- consistent with entropy's ~0.75 precision ceiling
+established earlier: it triggers often, and wrongly often enough, that
+no setting of it reaches a competitive accuracy.
+
+**Our controller's single validated point (73.5% accuracy, 146.3 kJ)
+sits above the max\_tokens curve at comparable energy** (interpolating
+that curve at 146.3 kJ gives roughly 65-70%) **and above the entropy
+curve's entire achievable range** (which never reaches 73.5% at any
+energy level tested). This is real frontier dominance over a
+comparable operating range, not a single cherry-picked favorable
+point -- the standard the paper's own E2 methodology set for itself
+from the start. Built `fig_e2_frontier.pdf` plotting all three
+alongside the no-stopping reference point, and wrote the result into
+Section 6.6, replacing the earlier single-point framing.
+
+**Not yet done:** the DEER-inspired addition remains open, contingent
+on finding a clean, honestly-labeled adaptation; E3 (battery dynamics)
+and E4 (overhead accounting) remain unstarted.

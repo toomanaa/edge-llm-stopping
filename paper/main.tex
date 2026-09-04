@@ -719,12 +719,59 @@ for a 40.7\% reduction in measured energy.}
 \label{fig:e2-controller-vs-baseline}
 \end{figure}
 
-\todo{Remaining for a complete E2: the same measured comparison for
-tuned \texttt{max\_tokens}, entropy thresholding, and DEER/LASER-style
-baselines, computed retroactively from the existing offline power
-traces where possible, to place the controller's single operating
-point on a full quality-energy frontier rather than reporting it in
-isolation.}
+To place that single point against alternatives, we swept two simpler
+baselines retroactively over the same 1{,}074 questions, using the
+boundary-level data (token position, entropy, and a matching power
+measurement at each sentence boundary) already collected for the
+analysis in Section~\ref{sec:e1v2} -- no further Pi time was needed for
+this part. Both baselines decide at the same sentence-boundary
+granularity as every other method in this paper, so the comparison is
+not giving either one an unfair resolution advantage. A fixed
+\texttt{max\_tokens} budget, swept from 30 to 500 tokens, traces a
+smooth curve from 46.1\% accuracy at 57.3\,kJ up to 81.7\% at 238.0\,kJ,
+approaching but never quite reaching the no-stopping baseline's 81.9\%
+at 246.7\,kJ. Sweeping the entropy threshold instead (the same nine
+threshold values used throughout this paper) behaves differently: even
+at its most conservative setting, entropy never uses more than
+66.4\,kJ, and accuracy actually falls as the threshold is relaxed,
+from 52.0\% down to 42.4\% -- consistent with the precision ceiling of
+roughly 0.75 already established for this signal, entropy triggers
+often enough, and wrongly enough, that a real deployed policy built on
+it cannot reach either the accuracy of a generous token budget or of
+our controller, at any point along its own range.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/fig_e2_frontier.pdf}
+\caption{Accuracy against total measured energy, 1{,}074 questions: our
+controller against a swept fixed \texttt{max\_tokens} budget and a
+swept entropy threshold. The controller's operating point sits above
+the \texttt{max\_tokens} curve at comparable energy (roughly 65--70\%
+accuracy interpolated at 146\,kJ, against the controller's 73.5\%), and
+above the entire achievable range of the entropy baseline, which never
+reaches this accuracy level regardless of threshold.}
+\label{fig:e2-frontier}
+\end{figure}
+
+Our controller's single operating point sits above the
+\texttt{max\_tokens} curve at comparable energy -- interpolating that
+curve at 146.3\,kJ gives roughly 65--70\% accuracy, against the
+controller's measured 73.5\% at the same energy -- and above the
+entropy baseline's curve everywhere, since that curve never reaches
+73.5\% accuracy at any energy level we tested. This is the frontier
+dominance this section's methodology called for at the outset: not a
+single favorable point taken in isolation, but a real advantage over a
+comparable range of a swept alternative's own operating curve.
+
+\todo{Remaining for a complete E2: the same measured comparison for a
+DEER-inspired induced-answer confidence signal, and, if a faithful
+adaptation is found, LASER's load-responsive threshold -- currently
+positioned only as related work (Section~\ref{sec:related}) rather
+than an empirical baseline, since both methods were designed for a
+different decision point (pre-answer reasoning truncation in
+CoT-style models) and, for LASER, a different resource signal (server
+queue load) than this paper's post-answer, single-device, battery-aware
+setting; an honest adaptation of either is not yet implemented.}
 
 \subsection{E3: Battery dynamics and fail-open}
 \label{sec:e3}
