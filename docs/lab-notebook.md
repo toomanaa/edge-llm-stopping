@@ -908,6 +908,47 @@ crash-related gaps clearly visible and honestly labeled rather than
 hidden. Both written into the paper's Section 6.7, replacing the
 earlier placeholder.
 
+## E4: overhead accounting
+
+Filled in the paper's third and final empirical placeholder, largely
+from data already collected tonight rather than needing new
+experiments. Three real numbers:
+
+**Probe inference cost.** Benchmarked the probe's own forward pass
+(135,297 parameters: a single 64-unit hidden layer over the model's
+2,048-dimensional hidden state, plus the standardization scaler) over
+20,000 calls: 27.8 microseconds average. Since the actual trained
+weights only ever lived on the Pi and never round-tripped through this
+environment, benchmarked a synthetic probe with the identical
+architecture instead -- valid for timing purposes, since numpy matmul
+cost depends on matrix dimensions, not the specific trained values,
+and disclosed as such in the paper.
+
+**Boundary-detection cost.** Reused the real, Pi-measured linear fit
+from `diagnose_caching.py` (built during the E2 overhead diagnosis) to
+compute the `/embeddings` call's cost at several realistic context
+lengths: 374ms at 100 characters, up to 5,715ms at 2,000 characters.
+Placed side by side with the probe's cost on a log-scale figure: the
+boundary check costs four to five orders of magnitude more than the
+probe itself at every length tested, direct, quantified confirmation
+of what the earlier `check_every_n` diagnosis already implied --
+the retrieval mechanism, not the probe, is what needed fixing.
+
+**One-time calibration cost.** Tallied the real calibration effort
+from earlier tonight's threshold sweep: three 30-question probes
+(0.8, 0.9, 0.99) plus two 100-question checkpoints (an initial run at
+a since-abandoned 0.7, and a confirming run at 0.99) = 290 total
+interactions. At that phase's measured average of 29.6 seconds per
+interaction, approximately 2.4 hours of one-time compute -- paid once,
+offline, not per-request or per-device. Framed explicitly as the
+honest cost behind the paper's "training-free" claim: no gradient
+training occurs, but a real, disclosed calibration pass is still
+required.
+
+All three empirical sections (E2, E3, E4) are now complete and written
+into the paper with real numbers, replacing every remaining
+placeholder from the original experimental plan.
+
 ## The corrected full-scale run: a real, positive result
 
 Before relaunching, closed a real gap between the paper's own

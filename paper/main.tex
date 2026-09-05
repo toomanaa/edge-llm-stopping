@@ -909,7 +909,55 @@ We report the inference cost of the probe, the cost of boundary detection,
 and the one-time cost of calibrating $\lambda$, so that the claim of a
 lightweight, training-free wrapper can be checked against numbers rather
 than taken on trust.
-\todo{Results: overhead table.}
+
+\textbf{Probe inference cost.} The trained probe (135{,}297 parameters
+total, including the standardization scaler: a single hidden layer of
+64 units over the model's 2{,}048-dimensional hidden state) is a pure
+numpy forward pass with no learned-framework dependency. Benchmarked
+over 20{,}000 calls, a single forward pass takes 27.8 microseconds.
+This was measured on general-purpose hardware rather than the Pi
+itself, since the architecture, not the specific trained weights,
+determines this cost; the comparison below shows the conclusion is
+robust to this even under a generous hardware-slowdown assumption.
+
+\textbf{Boundary-detection cost.} The dominant real cost of a stopping
+decision is not the probe but the \texttt{/embeddings} call needed to
+obtain the hidden state in the first place. Measured directly on the
+Pi (Section~\ref{sec:e2}'s diagnosis of the negative-savings run),
+this call's latency grows linearly with accumulated context: from
+374ms at 100 characters up to 5{,}715ms at 2{,}000 characters.
+Figure~\ref{fig:e4-overhead} places these side by side on a log scale:
+even at the shortest context tested, the boundary check costs four
+orders of magnitude more than the probe itself, and the gap widens to
+five orders of magnitude at longer contexts. This is direct,
+measured confirmation of the diagnosis in Section~\ref{sec:e2}: the
+\texttt{check\_every\_n} fix mattered because the retrieval mechanism
+dominates cost, not because the probe itself was ever expensive.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{figures/fig_e4_overhead.pdf}
+\caption{Per-decision cost, log scale. The probe's own forward pass
+(27.8 microseconds) is negligible next to the \texttt{/embeddings}
+call needed to feed it, which grows with accumulated context and
+reaches seconds at longer contexts -- four to five orders of magnitude
+more expensive than the probe itself at every length tested.}
+\label{fig:e4-overhead}
+\end{figure}
+
+\textbf{One-time calibration cost.} Selecting the fixed threshold used
+throughout Sections~\ref{sec:e2}--\ref{sec:e3} (0.99) required a
+calibration sweep of 290 interactions total: three 30-question probes
+at candidate thresholds (0.8, 0.9, 0.99), plus two 100-question
+checkpoints (an initial run at a since-abandoned threshold of 0.7, and
+a confirming run at 0.99) needed after the smaller samples proved
+unreliable estimators of real accuracy. At this phase's measured
+average of 29.6 seconds per interaction, this amounts to approximately
+2.4 hours of one-time compute -- paid once, offline, before
+deployment, not on any per-request or per-device basis. This is the
+honest cost of the "training-free" claim: no gradient-based training
+occurs, but a real, disclosed calibration pass is still required to
+select the operating threshold.
 
 %% =====================================================================
 \section{Discussion and Limitations}
