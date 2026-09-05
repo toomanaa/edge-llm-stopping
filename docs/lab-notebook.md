@@ -811,6 +811,103 @@ overhead problem and its diagnosis, not deleted, since the debugging
 path is as much a part of this project's honest record as the eventual
 positive result.
 
+## E3: battery drain, on a genuinely different device than planned
+
+Discovered a real hardware limitation before wasting a multi-hour
+experiment on it: the Pi 5 requires 5V/5A, and the available Anker
+battery pack (20,000mAh, confirmed via its own printed spec label)
+tops out at 5V/3A per port -- a real, hard ceiling, not a cable or
+port problem. Diagnosed this cleanly: the Pi 5 showed `SD: card not
+detected` and an explicit `USB boot requires high current (5 volt 5
+amp)` warning on the battery pack, and booted perfectly normally on
+wall power with the same SD card, confirming the power supply as the
+sole cause.
+
+Solved by switching to a second Raspberry Pi 4 (4GB), whose official
+power supply is rated 5V/3A -- within the Anker pack's capability.
+Rebuilt the whole stack from scratch on this second device: cloned and
+built llama.cpp (clean, ~15 minutes, no network issues this time),
+pulled the model directly from Hugging Face rather than round-tripping
+through the Pi 5, and transferred the dataset, probe weights, and
+controller scripts over. This is a genuine platform substitution, not
+a controlled comparison, and is disclosed as such in the paper: E3's
+absolute power figures characterize the Pi 4 under the same controller
+and workload, not the Pi 5 used throughout the rest of the paper.
+
+Set up a FNIRSI FNB48S inline USB power meter to measure real current
+independently of either Pi's own telemetry (the Pi 4 has no onboard
+power-management IC comparable to the Pi 5's PMIC, so `vcgencmd
+pmic_read_adc` -- used for every other energy number in this paper --
+does not exist on this device). After ruling out Windows-side PC
+logging (would have required a driver replacement, Zadig, with a real
+risk of conflicting with the vendor's own software) and briefly
+considering routing the meter through the Pi 4 itself, ended up doing
+exactly that after all: installed `pyusb` and a reverse-engineered
+open-source logger (`baryluk/fnirsi-usb-power-data-logger`, confirmed
+to explicitly support the FNB48S) directly on the Pi 4, reading the
+meter over its own separate USB data port. This gave genuine
+100-samples/second automatic logging, a real upgrade over the manual
+periodic photo-reading fallback planned earlier.
+
+The logger proved to have a real, documented reliability limitation
+(noted in its own README): it crashed with a USB timeout four times
+over the course of the full drain, each time recovered by unplugging
+and replugging only the data cable (never the power cable) and
+restarting the same command. None of these crashes affected the actual
+drain test, which ran as a fully independent process throughout and
+was confirmed alive via `ps aux` at every check. One crash produced a
+genuine ~2.24-hour gap in the power log with no manual intervention
+(discovered only at the next scheduled check-in), and a final crash
+left the last ~26 minutes before the true end unlogged; both gaps are
+disclosed honestly in the paper rather than papered over.
+
+Tracked overall drain progress primarily via the battery pack's own
+percentage display (99% at the confirmed start, checked periodically
+against the real clock) rather than the power meter's integrated
+capacity, after finding the capacity-based projection method
+produced inconsistent, unreliable answers under cross-checking
+(estimates of total interactions before depletion swung from ~485 to
+~4,146 to ~1,280 depending on which sub-assumption was adjusted,
+never converging) -- concluded this was not worth chasing further and
+that the simple, direct percentage reading was the trustworthy
+signal, which it proved to be: successive percentage-based projections
+converged steadily (485, then 453, then 362, then 341, then 332,
+then 326) as more data came in, and correctly anticipated the real,
+observed acceleration in discharge rate near the end (a well-known
+lithium-ion voltage-sag effect, not a measurement artifact -- confirmed
+by comparing early, mid, and late instantaneous rates: 8.83%/hour,
+10.86%/hour, 20-24%/hour in the final half hour).
+
+**Final result: 306 interactions completed on a single charge**, from
+07:12 to approximately 15:28 (8.3 hours). The last three logged
+responses before the device lost power were inspected directly and
+found fully complete and coherent -- including a long, well-structured
+multi-paragraph explanation of rust formation as literally the final
+thing generated before shutdown, with no sign of degradation or
+truncation. Average power draw across three independently-logged
+clean segments (separated by the crash gaps) was 7.29W, 7.30W, and
+7.30W -- a strong, reassuring consistency across measurements taken
+hours apart.
+
+Ran the fail-open test (`fail_open_test.py`, 10 creative/OOD prompts
+never resembling the probe's training distribution) once while the
+pack was at 27% charge, concurrently with the ongoing main drain
+sharing the same server process. All ten completed with zero crashes
+and zero suspiciously short outputs. Several boundary checks genuinely
+timed out during this run under the added concurrent load (visible in
+the console as repeated probe-call failures) -- an unplanned, real
+stress test of the fail-open rule, and in every case the controller
+correctly treated the failure as "keep generating" rather than
+stopping, exactly as designed.
+
+Built two figures from this real data: a battery-charge-and-
+interactions-over-time plot showing the observed discharge curve
+(including its visible late acceleration), and a three-segment power
+trace plot showing the measured wattage throughout, with the
+crash-related gaps clearly visible and honestly labeled rather than
+hidden. Both written into the paper's Section 6.7, replacing the
+earlier placeholder.
+
 ## The corrected full-scale run: a real, positive result
 
 Before relaunching, closed a real gap between the paper's own

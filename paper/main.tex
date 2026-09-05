@@ -170,6 +170,30 @@ which the answer is effectively determined. This observation has motivated
 a body of work on controlling test-time
 computation~\cite{snell2024testtime,xu2025chainofdraft,aggarwal2025l1}.
 
+\subsection{Optimal stopping theory applied to LLMs}
+\label{sec:related-optstop}
+This paper formalizes its stopping decision using optimal stopping
+theory (Section~\ref{sec:method}), and two recent papers apply the
+same theoretical toolkit to LLMs, at a different decision granularity
+than ours. Kalayci et al.~\cite{kalayci2025optstopbestofn} cast
+best-of-$N$ sampling as a Pandora's Box problem: each full candidate
+generation is a costly box with an unknown reward, and their UCB-style
+algorithm decides how many independent generations to sample before
+stopping and returning the best one, with performance provably close to
+Weitzman's optimal policy when the reward distribution is known.
+Hammar et al.~\cite{hammar2026optstoprefine} formalize a
+self-refinement loop -- a model iteratively revising its own complete
+output against verifier feedback -- as an optimal stopping problem over
+the number of refinement rounds, deriving policies computed via
+stochastic approximation. Both papers make a genuine theoretical
+contribution, and both operate one level above the decision we study:
+their stopping variable is a count of complete, independent generation
+or refinement attempts, priced in generic inference cost. Ours is a
+stopping decision \emph{within} a single generation, at the level of
+sentence boundaries, priced in joules measured on the deployed device.
+The theoretical framework transfers; the object being stopped and the
+currency it is priced in do not.
+
 \subsection{Confidence-based generation stopping}
 \label{sec:related-stopping}
 DEER~\cite{yang2025deer} pauses reasoning at action-transition points
@@ -191,14 +215,34 @@ Related approaches include answer-convergence
 stopping~\cite{liu2025answerconv} and length control trained with
 reinforcement learning~\cite{aggarwal2025l1}.
 
+Closest to our own setting is concurrent work by Yu and Zhang, accepted
+at IEEE AIBThings 2026~\cite{yu2026ecogeniot}. Their system, EcoGenIoT,
+targets the same class of device (a small, quantized, CPU-only language
+model in a low-power IoT setting) and, like ours, makes a live decision
+during generation -- but it selects among three actions at the level of
+response segments (Continue, Stop, and an explicit Confirm action that
+asks the user for clarification when the request is ambiguous, which we
+do not attempt). Their preliminary evaluation, on Qwen2.5-1.5B, reports
+reduced output tokens and reduced \emph{estimated} energy cost against
+uncontrolled generation and a concise-prompting baseline. As with DEER,
+Dynasor, and LASER, the resource term driving the decision is estimated
+rather than measured from a power sensor on the deployed device, and the
+evaluation is explicitly described as preliminary. This paper's
+contribution is the measured case: a stopping rule priced in joules
+actually metered on the target hardware, evaluated at the scale of a
+full dataset with a live controller validated end to end and swept
+against alternatives on a real quality-energy frontier.
+
 Table~\ref{tab:taxonomy} summarizes this design space. DEER and Dynasor are
 motivated by resource waste, but their stopping rules consult only answer
 confidence; no resource quantity appears in the decision. LASER introduces
 a system signal, but the resource it tracks is congestion on a shared
 server, not the physical energy of the device, and its system-level results
-come from discrete-event simulation rather than from measurement. All three
-methods assume constant per-token cost, and all three depend on
-reasoning-model scaffolding for their exit points.
+come from discrete-event simulation rather than from measurement.
+EcoGenIoT is the closest in application domain, but its energy term is
+estimated rather than measured, and its evaluation is preliminary. All
+methods in this space that involve a confidence signal depend on
+reasoning-model scaffolding or response segmentation for their exit points.
 
 \begin{table}[t]
 \centering
@@ -211,6 +255,7 @@ Method & Quality signal & Resource signal & Objective & Evaluation \\
 DEER~\cite{yang2025deer} & trial-answer confidence & none & tokens & GPU \\
 Dynasor~\cite{fu2025dynasor} & answer stability & GPU alloc.\ (serving) & tokens/throughput & GPU \\
 LASER~\cite{tang2026laser} & trial-answer confidence & server load & latency/SLO & simulation \\
+EcoGenIoT~\cite{yu2026ecogeniot} & segment-level confidence & estimated energy & tokens/energy (est.) & preliminary \\
 Ours & learned probe & measured energy, battery & joules/request & metered device \\
 \bottomrule
 \end{tabular}
@@ -775,11 +820,89 @@ setting; an honest adaptation of either is not yet implemented.}
 
 \subsection{E3: Battery dynamics and fail-open}
 \label{sec:e3}
-Runs under battery drain validate the schedule $\lambda(s)$. We report the
-number of interactions completed per charge, spot checks of grammatical
-closure at low charge, and the stop rate on out-of-distribution prompts,
-which tests the fail-open rule.
-\todo{Results: interactions per charge; OOD stop rate near zero.}
+This experiment was run on a Raspberry Pi 4 (4GB) rather than the Pi 5
+used throughout the rest of this paper. The Pi 5 draws up to 5V/5A under
+load, and the battery pack available for this test (a 20{,}000mAh USB-C
+power bank rated 5V/3A per port) could not reliably supply a cold boot at
+that current, producing intermittent SD-card and USB-boot power warnings
+on the Pi 5; the Pi 4's lower rated draw (5V/3A) matched the pack's
+capability and booted and ran without incident. This is a genuine
+platform difference, not a controlled substitution, and the absolute
+power figures in this section should be read as characterizing the Pi 4
+under the same controller and workload, not as directly comparable to
+the Pi 5 numbers reported in Sections~\ref{sec:e1v2}--\ref{sec:e2}.
+
+The controller ran continuously, cycling the same 1{,}074-question
+dataset from the start once exhausted, using the validated fixed
+threshold (0.99, checking every second sentence boundary) from
+Section~\ref{sec:e2}, from a full charge until the device lost power
+entirely. Power was logged with an inline USB power meter (FNIRSI
+FNB48S) via its data port, independent of the Pi's own telemetry (the
+Pi 4 has no onboard power-management IC comparable to the Pi 5's,
+unlike the sensor used for every other energy figure in this paper).
+The logger crashed and was restarted four times over the course of the
+run, a documented limitation of the reverse-engineered driver used; each
+restart is visible as a gap in Figure~\ref{fig:e3-power}, and one such
+gap covers the final $\sim$26 minutes before the device lost power, so
+the last logged reading (15:02) precedes the true end of the run
+(inferred from the last completed interaction's timestamp, 15:28) by
+that margin. None of these gaps affected the interaction log itself,
+which ran as a separate, uninterrupted process throughout.
+
+\textbf{Interactions per charge.} The device completed \textbf{306
+interactions} on a single charge, from 07:12 to approximately 15:28 (8.3
+hours). Figure~\ref{fig:e3-drain} shows the battery charge (read from the
+pack's own percentage display at each check-in) against elapsed time
+alongside the cumulative interaction count. The discharge is close to
+linear for roughly the first six hours, then visibly accelerates: the
+last 15 percentage points were consumed in under 40 minutes, consistent
+with the well-known voltage-sag behavior of lithium-ion packs
+approaching depletion rather than any change in the controller's own
+behavior.
+
+\textbf{Measured power draw.} Across three independently-logged
+segments, separated by the crash-and-restart gaps described above,
+average power draw was 7.29W, 7.30W, and 7.30W respectively --
+remarkably consistent given they were measured hours apart and span
+most of the discharge curve. Figure~\ref{fig:e3-power} shows the full
+power trace; the visible spikes and dips reflect real, moment-to-moment
+generation activity rather than measurement noise.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_e3_battery_drain.pdf}
+\caption{Battery charge and cumulative interactions completed over the
+full drain, Raspberry Pi 4. Charge is read directly from the battery
+pack's own display at each check-in (sparse, not continuous); the
+discharge curve visibly steepens in the final hour, a real and
+expected battery effect rather than a change in system behavior.}
+\label{fig:e3-drain}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_e3_power_trace.pdf}
+\caption{Measured power draw (voltage $\times$ current) across the three
+logging segments of the battery drain. Gaps between segments are logger
+crashes (a known limitation of the USB power meter's reverse-engineered
+driver), not power interruptions to the device; the interaction log ran
+uninterrupted throughout, including across these gaps.}
+\label{fig:e3-power}
+\end{figure}
+
+\textbf{Fail-open on out-of-distribution prompts.} We ran ten
+creative, open-ended prompts (poetry, short stories, invented recipes)
+that resemble nothing in the probe's training distribution, once while
+the pack was already low (27\% charge, sharing the same server process
+as the ongoing main drain). All ten completed without error, none
+produced suspiciously short output, and by inspection each read as a
+genuine, complete response rather than a truncated fragment. Several
+boundary checks during this run timed out outright under the added
+load (visible in the run's console output as repeated probe-call
+failures) -- a real, unplanned stress test of the fail-open rule from
+Section~\ref{sec:signal}, and in every case the controller
+correctly treated the failure as a signal to keep generating rather
+than to stop, exactly as designed.
 
 \subsection{E4: Overhead accounting}
 We report the inference cost of the probe, the cost of boundary detection,
