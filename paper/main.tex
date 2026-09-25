@@ -322,14 +322,16 @@ is close to zero. However, stopping there would break the command.
 On the other hand, once the tool call is finished, the model may still be quite
 uncertain about which polite continuation to produce, so entropy is high,
 even though nothing of value remains to be said. From our observations,
-the two quantities are sometimes anticorrelated right at the boundaries that matter.
+the two quantities are sometimes anticorrelated right at the boundaries that matter. This is consistent with the larger finding that token-level
+entropy conflates uncertainty over meaning with uncertainty over
+phrasing~\cite{farquhar2024semantic}.
 We began by considering an entropy threshold, but in this paper we use it
 only as a baseline for comparison against our proposed signal (Section~\ref{sec:estimators}).
 
 \subsection{Hindsight labeling}
 \label{sec:labeling}
 Measurability of quality is needed only offline, when labels are created.
-For each of the $N$ prompts that have clear, checkable success criteria, we let the model generate text until it naturally finishes. We then record the hidden state at every valid stopping point. For each boundary $t$, we score
+For each of the $N$ prompts that have clear, checkable success criteria, we let the model generate text until it naturally finishes. We then record this representation at every valid stopping point. For each boundary $t$, we score
 the output that is cut off at $t$ by comparing it to the ground truth, and label the
 boundary with the actual quality difference $\Delta Q(t)$ between
 stopping at that point and decoding to completion. In the example above, every boundary at or after the completed tool call
@@ -344,8 +346,9 @@ We introduce three candidate methods for estimating $\dq$: S1, S2 and S3. S1 and
 are compared empirically in our experiments, and an empirical
 evaluation of S2 is left for future work.
 The main estimator, S1, uses a probe with fewer than one million parameters.
-It reads the hidden state of the frozen model at the boundary and predicts
-a probability estimate of $\Delta Q(t)$. The probe is designed to add little computational overhead relative to continued decoding. The second method, S2,  is an agreement signal that adapts
+It reads a representation of the frozen model's internal state at the
+boundary, obtained via llama.cpp's \texttt{/embeddings} endpoint, and
+predicts a probability estimate of $\Delta Q(t)$. The probe is designed to add little computational overhead relative to continued decoding. The second method, S2,  is an agreement signal that adapts
 the answer-convergence stopping method~\cite{liu2025answerconv,fu2025dynasor} for
 single-pass streaming. For our adaptation, a small draft model~\cite{leviathan2023speculative} completes the answer, and agreement between the draft completion and the current answer provides evidence that further generation is unlikely to change the result. S3 is the
 entropy-and-boundary-feature heuristic. We keep this as an ablation to measure
@@ -454,15 +457,15 @@ truth. We evaluate this dataset as a preliminary experiment in
 Section~\ref{sec:e0}.
 
 In addition, we created two QA datasets for this project and release both with the paper.
-The first contains 304 short-answer questions with accepted answer strings.
+The first contains 304 factual questions with accepted answer strings.
 It is used only for the preliminary experiment in
 Section~\ref{sec:e1prelim}.
 
 After this experiment, we found that unsafe stopping points appeared mainly
 in longer answers. Therefore, we created a second dataset with 1{,}074
 questions, generated
-by template scripts with a fixed random seed for reproducibility. It contains 40\% short factual questions and 60\% explain-why
-questions. For short-answer questions, correctness is checked using accepted
+by template scripts with a fixed random seed for reproducibility. It contains 40\% factual questions and 60\% explain-why
+questions. For For factual questions, correctness is checked using accepted
 answer strings. For explain-why questions, an answer is considered correct
 if it contains all required concept keywords. This second dataset is used
 for the signal-validation experiments in Section~\ref{sec:e1} and for all
@@ -477,24 +480,15 @@ We compare our proposed model to three baselines. The first baseline allows norm
 
 \subsection{Preliminary measurement: command parsing (E0)}
 \label{sec:e0}
-Before building the full controller, we ran two small measurement
-experiments on the Pi. In both, we let the model answer a set of prompts
-with no length limit while the onboard power sensor recorded how much
-energy it used, and we asked the same question of each response: after the
-model has already given a complete, correct answer, how many more tokens
-does it generate, and what does that cost in joules? The first experiment
-used the 333 smart-home commands, with a system prompt anchored by a few
-worked examples that showed only bare tool calls. The model produced the
-exactly correct call in 198 of 333 cases (59.5\%), and in every one of
+We ran two small measurement tests on the Pi before building the full controller. In both experiments, we let the model answer without a length limit while measuring its energy use. We then measured how many extra tokens it generated after the correct answer was already complete, and how much energy those extra tokens consumed. The first experiment used the 333 smart-home commands. The system prompt included a few examples showing the model how to return only the required tool call. The model produced the
+exactly correct call in 198 of 333 cases (59.5\%). In every one of
 those correct responses, generation stopped at the tool call. There was
-nothing left over to trim. The prompt that fixed the model's formatting
-had, as a side effect, already removed the trailing text a stopping
-mechanism would otherwise catch. This is a useful result on its own: it
+nothing left over to trim. The prompt told the model to return only the tool call. As a result, the model usually stopped immediately after producing the correct command, leaving little extra text for an early-stopping method to remove. This is a useful result on its own. It
 shows that for tasks with a rigid, checkable output format, a well-written
 prompt can do the job our controller is meant to do, at no runtime cost at
-all. It also tells us that this task is the wrong place to look for
-evidence that adaptive stopping matters, so the rest of the paper looks
-elsewhere.
+all. This also shows that this task is not the right place to look for
+evidence about whether adaptive stopping matters, so the rest of the paper focuses
+on other cases.
 
 \begin{figure}[t]
 \centering
@@ -504,60 +498,61 @@ QA set used in Section~\ref{sec:e1prelim}.}
 \label{fig:length-hist}
 \end{figure}
 
-\subsection{Preliminary measurement: open-ended factual questions (E1)}
+\subsection{Preliminary measurement: open-ended factual questions (E1-prelim)}
 \label{sec:e1prelim}
-The command task left the model no room to elaborate, so we repeated the
-measurement on a task that does: 304 short-form factual questions (world
-capitals, historical dates, basic science, and similar), each with a list
-of acceptable answer strings, answered under an open system prompt that
-only asked for a clear and correct answer. Response length varied
-considerably across the set (Figure~\ref{fig:length-hist}), from single
+The command task, presented in the previous subsection, did not allow the model to elaborate, so we repeated the measurement. This time, we used a task with 304 short factual questions, such as world
+capitals, historical dates, basic science, and similar topics. Each question had a list
+of acceptable answers and was answered using an open system prompt that
+only requested a clear and correct answer. Figure~\ref{fig:length-hist} shows response length varied
+considerably across the set, from single
 short factual replies to answers running well past the point of
 diminishing returns. Of the 304 responses, 291
-(95.7\%) contained the correct answer. Here the picture was different.
-Correct responses ran on for an average of 8.2 tokens (as many as 155 in
-one case) past the point where the answer was already given, adding up to
-2{,}388 wasted tokens and roughly 1{,}348\,J across the 291 correct
-responses -- a sharp contrast with the command-parsing task, where the
-same measurement gave zero (Figure~\ref{fig:waste-comparison}). We
-repeated the run three times at temperature 0 and the token
-counts matched exactly across all 304 questions each time; the energy
-totals agreed to within about 1\,J. So the waste is real, it is
-repeatable, and it is worth building something to catch it.
+(95.7\%) contained the correct answer. 
+
+In this experiment, measurements were different.
+Correct responses generated an average of 8.2 extra tokens after the
+answer was already complete, with one response producing 155 extra tokens.
+Across the 291 correct responses, this resulted in 2{,}388 unnecessary
+tokens and about 1{,}348\,J of extra energy. In comparison, the smart-home
+command task produced no extra tokens after the correct command was generated as shown in Figure~\ref{fig:waste-comparison}. We repeated the experiment three times at temperature 0. The token counts
+were identical across all 304 questions in every run, while the total energy
+measurements differed by only about 1\,J. This shows that the observed extra
+generation is repeatable and provides a clear motivation for an early-stopping
+mechanism.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\linewidth]{fig_waste_comparison.pdf}
 \caption{Average tokens generated after the earliest safe stopping point,
 compared across the command-parsing task (E0, Section~\ref{sec:e0}) and
-the open-ended QA task (E1, this section). Command parsing under
+the open-ended QA task (E1-prelim, this section). Command parsing under
 format-anchored prompting leaves nothing to trim; open-ended QA does.}
 \label{fig:waste-comparison}
 \end{figure}
 
 We also checked whether next-token entropy, the obvious first thing to
-try, is good enough on its own. Read correctly, from the model's
-pre-selection token distribution rather than from the probability of the
-token it already committed to, entropy does carry some signal: sweeping
-the threshold traces a real precision-recall curve
-(Figure~\ref{fig:entropy-roc}), with precision holding around 0.96--0.97
-throughout and recall rising from 0.31 at a cautious threshold to 1.00 at
-a permissive one. A cautious threshold, in other words, correctly flags a
-safe stopping point about a third of the time it should; a permissive one
-catches every safe stopping point but also lets through more false
-positives near the edges.
-
+try, is good enough on its own. We compute entropy from the model's full next-token probability
+distribution before it chooses the next token. Entropy does provide some
+useful information. As we change the stopping threshold, precision stays
+high at about 0.96--0.97, while recall increases from 0.31 to 1.00 as shown in Figure~\ref{fig:entropy-roc}. With a cautious threshold, the method finds
+only about one-third of the safe stopping points. With a more permissive
+threshold, it finds all safe stopping points, but it also produces more
+false positives. This is generally consistent with previous work showing
+that entropy over a restricted candidate-answer distribution, rather
+than the full next-token vocabulary, can serve as an effective stopping
+signal~\cite{haltcot}. Our own baseline tests the harder, i.e., full-vocabulary case.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.55\linewidth]{fig_entropy_roc.pdf}
 \caption{Precision and recall of an entropy-threshold stopping rule on
-E1, swept across threshold values. Precision stays near 0.96--0.97
-throughout; recall rises from 0.31 to 1.00 as the threshold is relaxed.}
+E1-prelim, swept across threshold values. Precision stays near
+0.96--0.97 throughout; recall rises from 0.31 to 1.00 as the threshold
+is relaxed.}
 \label{fig:entropy-roc}
 \end{figure}
 
-The token-level trajectories behind this curve are shown in
-Figure~\ref{fig:entropy-trace}: entropy is low through confidently
+The token-level trajectories behind this curve are presented in
+Figure~\ref{fig:entropy-trace}. Entropy is low through confidently
 generated phrasing in the middle of a sentence, and rises again near
 sentence starts and endings, which is exactly where a stopping decision
 needs to be made.
@@ -566,49 +561,43 @@ needs to be made.
 \centering
 \includegraphics[width=\linewidth]{fig_entropy_trace.pdf}
 \caption{Per-token entropy trajectories for two example responses from
-the E1 set, showing higher entropy near sentence starts and endings and
-lower entropy through confidently generated phrasing.}
+the E1-prelim set, showing higher entropy near sentence starts and
+endings and lower entropy through confidently generated phrasing.}
 \label{fig:entropy-trace}
 \end{figure}
 
-\subsection{A larger, harder open-ended set (E1-v2)}
+\subsection{A larger, harder open-ended set (E1-prelim V2)}
 \label{sec:e1v2}
-The 304-question set had a problem we did not see coming: almost every
-response was a single sentence, so only a small minority of boundaries
-were genuinely ambiguous stopping points. Out of several hundred labeled
-boundaries, fewer than twenty were labeled unsafe. That is not enough to
-trust a precision-recall estimate, and we suspected it was not enough to
-give the entropy baseline a fair test either.
+We faced an unforeseen issue with the 304-question set.  Most answers in the 304-question dataset were one sentence, so there were few challenging stopping points. Fewer than 20 labeled boundaries were unsafe. This limited number of unsafe cases was not enough for a reliable precision-recall analysis and made it hard to fairly evaluate the entropy baseline.
 
-So we built a second, larger question set: 1{,}074 questions, 434
+So we built a second, larger question set. It contains 1{,}074 questions, 434
 factual (same style as before) and 640 explain-or-why questions ("what
-causes X", "explain how X works"), chosen because they tend to produce
+causes X", "explain how X works"). These types of questions are chosen because they tend to produce
 longer answers with real stopping decisions throughout, not just at the
-end. There is no established ratio in the literature for a mixed
-factual/explanatory set like this -- factoid QA and non-factoid QA are
-usually treated as separate benchmark traditions. The 60/40 split toward
-explain questions was a choice made for this project's purpose, not a
-number pulled from prior work.
+end. The 60/40 split was selected to reflect where unsafe stopping points are most common
+as identified earlier, instead of following a standard ratio from
+previous studies.
 
-880 of the 1{,}074 responses (81.9\%) were correct: 94.9\% of factual
-questions, 73.1\% of explain questions. The explain number is lower
-because an explain answer only counts once every required concept
-appears in the text, not just one accepted phrasing -- and, after an
-early version of this check used plain substring matching, we found it
-was penalizing correct explanations that used a different word form
-than the required string (e.g. "align" instead of "alignment"); the
-numbers here use a corrected check that recognizes such variants for
-explain concepts while keeping factual answers to exact matches, since
-those are names and specific facts where broader matching would risk
-false positives.\footnote{The correction is small in practice: 116 of
-3{,}623 boundaries in the first pass turned out to be mislabeled unsafe
-for this reason.} Waste was far
-larger than in the smaller set. Correct responses ran on for an average
-of 182.3 tokens (as many as 716 in one case) past their earliest safe
-stopping point, 160{,}406 wasted tokens in total, an estimated
-89{,}268\,J across the 880 correct responses
-(Figure~\ref{fig:v2-waste-by-type}), with power data covering all 880 of
-them this time.
+Out of 1,074 responses, 880 were correct, which is 81.9\%. For factual
+questions, 94.9\% were answered correctly. For explain questions,
+73.1\% were answered correctly. The lower accuracy on explain-why questions is partly due to how these
+answers are evaluated. An explain answer is counted as correct only when
+all required concepts appear in the response. Our first implementation used
+simple substring matching, which sometimes marked correct answers as
+incorrect when the model used a different form of the same word, such as
+``align'' instead of ``alignment.'' We therefore updated the matcher to
+recognize these word-form variations for explain questions, while keeping
+exact matching for factual answers. This correction affected only 116 of 3{,}623 boundaries labeled unsafe
+in the first pass; after correcting them, 3{,}507 remained genuinely
+unsafe, the number reported above.
+
+The larger dataset also showed much more unnecessary generation. Across
+the 880 correct responses, the model generated an average of 182.3 extra
+tokens after the earliest safe stopping point, with a maximum of 716 extra
+tokens in one response. In total, this produced 160{,}406 unnecessary
+tokens and about 89{,}268\,J of additional energy, with power data
+covering all 880 responses as shown in Figure~\ref{fig:v2-waste-by-type}.
+
 
 \begin{figure}[t]
 \centering
@@ -618,22 +607,23 @@ factual versus explain-type questions, on the 1{,}074-question set.}
 \label{fig:v2-waste-by-type}
 \end{figure}
 
-More importantly, this set has real weight behind it. 13{,}568
-boundaries came from responses with more than one sentence, and 3{,}507
-of those were genuinely unsafe to stop at -- against fewer than twenty
-in the original set. Running the entropy-threshold baseline again on
-this larger set gives a different picture
-(Figure~\ref{fig:v1-vs-v2-entropy}). Precision sits around 0.75--0.78
-across the threshold sweep, well below the 0.96--0.97 we measured on the
-smaller set, while recall still climbs from about 0.34 to 1.00 over the
-same range. We take this as the more trustworthy number. A signal that
-looks strong on a handful of edge cases is not the same as one that
-holds up over thousands of them.
+More importantly, the larger dataset provides a much stronger test of the
+proposed stopping signal. It contains 13{,}568 boundaries from multi-sentence
+responses, including 3{,}507 unsafe stopping points, compared with fewer
+than 20 in the original dataset.
+
+Figure~\ref{fig:v1-vs-v2-entropy} shows the difference clearly. On the
+larger dataset, precision is about 0.75--0.78, compared with 0.96--0.97
+on the smaller dataset, while recall still increases from about 0.34 to
+1.00 as the threshold becomes more permissive. We therefore consider the
+results from the larger dataset more representative. The smaller dataset
+contained too few difficult stopping points to properly evaluate the
+entropy signal.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\linewidth]{fig_v1_vs_v2_entropy.pdf}
-\caption{Entropy-threshold precision/recall on the original 304-question
+\caption{Entropy-threshold precision-recall on the original 304-question
 set versus the larger 1{,}074-question set. The larger set's much bigger
 supply of genuinely unsafe boundaries (3{,}623 versus under 20) reveals a
 meaningfully lower precision ceiling for entropy than the smaller set
@@ -641,53 +631,50 @@ suggested.}
 \label{fig:v1-vs-v2-entropy}
 \end{figure}
 
-This changes what the learned probe in Section~\ref{sec:signal} needs to
-do. It is no longer enough to match a baseline that only looked strong
-because it was tested on so little data. With 3{,}623 real negative
-examples now available, there is enough to train and evaluate the probe
-properly, against a target -- entropy at roughly 0.75 precision -- that
-is finally a real, well-measured number instead of an artifact of a
-small sample.
+This also gives us a more reliable target for the learned probe in
+Section~\ref{sec:signal}. The larger dataset contains 3{,}623 unsafe
+examples, enough to train and evaluate the probe properly. In this setting,
+the entropy baseline achieves about 0.75 precision, which provides a
+more realistic comparison point than the higher value observed on the
+smaller dataset.
 
-Entropy is therefore not a useless signal, as we
-originally suspected -- but it is also not a settled one. The interesting
-question is whether the learned probe described in Section~\ref{sec:signal}
-can sit above this curve, catching more of the real waste at the same
-precision, rather than merely replacing a broken baseline with a working
-one. That comparison is the subject of Section~\ref{sec:e1}.
+Entropy is therefore a useful stopping signal, but it is not sufficient on
+its own. The next question is whether the learned probe in
+Section~\ref{sec:signal} can improve on this baseline by identifying more
+safe stopping points at the same precision. We evaluate this comparison in
+Section~\ref{sec:e1}.
 
 \subsection{E1: Signal validity}
 \label{sec:e1}
-Building on Section~\ref{sec:e1prelim} and the larger set in
-Section~\ref{sec:e1v2}, this experiment checks whether the learned probe
-(S1) actually improves on the entropy baseline (S3) established there,
-rather than just matching it. The bar is not low: on the 13{,}569-boundary
-v2 set, entropy holds a precision of roughly 0.75--0.78 across its
-recall range, and any claim for the probe needs to clear that with real
-data behind it, not a handful of edge cases.
+This experiment builds on Sections~\ref{sec:e1prelim} and~\ref{sec:e1v2}.
+It tests whether the learned probe (S1) outperforms the entropy baseline (S3).
+On the 13,568-boundary v2 dataset, S3 achieves a precision
+of about 0.75 to 0.78 across its recall range, i.e., a meaningful bar, given the
+larger dataset's much bigger supply of genuinely unsafe boundaries. We use this as the
+main baseline that S1 must improve on.
 
-We trained S1 -- a probe of under 200{,}000 parameters, reading the
-frozen model's last-layer hidden state at each boundary -- on a sample
-of 4{,}518 boundaries drawn from the v2 set, grouped by response so no
-response's boundaries were split across the sample. For evaluation we
-split those boundaries 70/15/15 into train, validation, and test sets,
-again grouped by response, and repeated this five times with different
-random seeds: each time using the validation set to pick the model and
-the test set only for the final number, so no single split determines
-the result. Average precision on the held-out test set came out to
-0.890, with a standard deviation of 0.045 across the five seeds (worst
-seed 0.833, best 0.964), against test sets ranging from 693 to 779
-boundaries with 132 to 234 of them genuinely unsafe.
+We trained S1, a probe with fewer than 200{,}000 parameters, using a
+representation of the frozen model's internal state at each stopping
+boundary, obtained via llama.cpp's \texttt{/embeddings} endpoint.
+We sampled 4{,}518 boundaries from the v2 dataset and split them into
+70\% training, 15\% validation, and 15\% test data. Boundaries from the
+same response were always kept in the same split to avoid data leakage.
 
-Every one of the five seeds beat entropy's precision ceiling, and by a
-similar margin each time (Figure~\ref{fig:probe-v2-vs-entropy}): the
-probe holds around 0.85--0.90 precision across most of its recall range,
-compared to entropy's 0.75--0.78 over a comparable range. Average
-precision summarizes the whole curve into one number and precision at a
-fixed recall point is not quite the same measurement, so we do not treat
-the two numbers as directly interchangeable, but the curves in the
-figure make the comparison directly, and the probe's curve sits above
-entropy's almost everywhere it is defined.
+We repeated the experiment five times using different random seeds.
+For each run, the validation set was used for model selection and the
+test set was used only for final evaluation. Across the five runs, S1
+achieved an average precision of 0.890 with a standard deviation of
+0.045. Individual runs ranged from 0.833 to 0.964, evaluated on test
+sets of 693 to 779 boundaries containing 132 to 234 actual unsafe
+cases.
+
+Across all five random seeds, the learned probe performed better than the
+entropy baseline. As shown in Figure~\ref{fig:probe-v2-vs-entropy}, the probe
+maintains about 0.85--0.90 precision across most of the recall range, while
+entropy remains around 0.75--0.78. The probe curve is above the entropy curve
+for almost the entire range, showing a consistent improvement. Also, average precision summarizes the full precision--recall curve, so it is not
+the same as precision measured at a single recall value. We therefore use
+the curves in Figure~\ref{fig:probe-v2-vs-entropy} for the direct comparison.
 
 \begin{figure}[t]
 \centering
@@ -699,55 +686,48 @@ seeds, showing the result is not the product of one favorable split.}
 \label{fig:probe-v2-vs-entropy}
 \end{figure}
 
-This is enough to say the probe is doing something entropy cannot: it
-is not simply recovering the same information from a different angle.
-We had trained a smaller pilot version of this probe earlier, on 447
-boundaries from the original 304-question set, and it looked roughly
-comparable to entropy there -- but that test set had only four negative
-examples, not enough to tell a real difference from noise. The result
-here, on hundreds of negative examples per seed, is the first version of
-this comparison we are willing to stand behind.
+This result suggests that the learned probe captures information that is not
+available from entropy alone. We had previously tested a smaller pilot probe
+using 447 boundaries from the original 304-question dataset, where its
+performance looked similar to entropy. However, that test set contained only
+four unsafe examples, which was too small for a reliable comparison. In the larger experiment, each test split contains hundreds of unsafe
+examples, and the probe consistently performs better than entropy. We
+therefore consider this larger result to be the more reliable comparison.
 
 \subsection{E2: Quality against measured energy}
 \label{sec:e2}
-We implemented the controller described in Section~\ref{sec:memory} on
-the Pi: the trained probe from Section~\ref{sec:e1}, exported as plain
-numpy weights and run without any scikit-learn or PyTorch dependency
-on the device, deciding stop-or-continue live during generation by
-querying llama.cpp's \texttt{/embeddings} endpoint at each admissible
-boundary. Getting an honest number here took two real attempts. Every
-first pass, using the fixed calibrated threshold from
-Section~\ref{sec:method} and checking every sentence boundary, measured
-\emph{negative} energy savings: the controller used slightly more
-energy than generating every response to completion. A diagnostic
-comparing \texttt{/completion} and \texttt{/embeddings} latency on
-identical, growing text found the cause: \texttt{/completion} calls
-benefit from the server's prompt cache as expected (latency flat across
-a range of context lengths), but \texttt{/embeddings} calls do not --
-latency there grew roughly linearly with context length, meaning every
-boundary check reprocessed the entire response from scratch, and later
-checks in a long response paid an ever-larger cost. With some responses
-making a dozen or more checks, this made the checking mechanism itself
-the dominant energy cost, large enough to erase the savings from
-stopping early at all.
+We implemented the controller from Section~\ref{sec:memory} on the
+Raspberry Pi using the trained probe from Section~\ref{sec:e1}. The probe
+weights were exported to NumPy so that no scikit-learn or PyTorch runtime was
+needed on the device. During generation, the controller queried llama.cpp's
+\texttt{/embeddings} endpoint at each admissible sentence boundary and used
+the returned representation to decide whether to stop or continue.
 
-The fix was to check less often: evaluating the probe at every second
-sentence boundary rather than every one, which roughly halves the
-number of these expensive calls. On the full 1{,}074-question set, the
-corrected controller was correct on 789 responses (73.5\%, against
-roughly 82\% for the same questions run to natural completion) and
-stopped early on 590 of them (54.9\%). Measured directly from the
-power trace, the controller used 146{,}313.55\,J against 246{,}665.86\,J
-for the same 1{,}074 questions generated without any stopping mechanism
--- a 40.7\% reduction, computed the same way as every other energy
-figure in this paper, from a metered power trace integrated over each
-response's real timestamps, not estimated from token or word counts.
-We consider this the honest number: an earlier estimate based on
-words generated, ignoring the controller's own overhead, suggested a
-much larger 69\,\% reduction, and the gap between the two is itself
-worth reporting -- the cost of making the stopping decision is real and
-not small, and a paper that only reports the token-count savings would
-overstate what the system actually delivers.
+Our first implementation did not save energy. In fact, it consumed slightly
+more energy than allowing the model to generate each response to completion.
+A latency test showed why. Calls to \texttt{/completion} benefited from the
+server's prompt cache, so their latency stayed roughly stable as the context
+grew. Calls to \texttt{/embeddings}, however, became slower as the response
+became longer, indicating that the text was being reprocessed at each
+boundary check. As a result, repeatedly checking long responses became expensive. Some
+responses required more than a dozen boundary checks, and the energy spent on
+those checks was large enough to cancel the savings from early stopping.
+
+To reduce the overhead of repeated boundary checks, we evaluated the probe
+at every second sentence boundary instead of every boundary. This roughly
+halved the number of expensive \texttt{/embeddings} calls. On the full 1{,}074-question dataset, the controller answered 789 questions correctly (73.5\%), compared with about 82\% accuracy when generation was
+allowed to finish normally. It stopped early on 590 responses (54.9\%). 
+
+The measured energy use was 146{,}313.55\,J with the controller, compared
+with 246{,}665.86\,J without early stopping, giving a 40.7\% reduction.
+These values come directly from the recorded power traces, integrated
+over each response's real timestamps, the same method used for every
+other energy figure in this paper, and include the energy cost of
+running the controller itself. An earlier estimate based only on the amount of generated text suggested
+a larger saving of about 69\%. However, that estimate ignored the overhead
+of the stopping mechanism. The difference shows that controller overhead
+is significant and should be included when reporting the real energy
+benefit.
 
 \begin{figure}[t]
 \centering
@@ -761,26 +741,21 @@ for a 40.7\% reduction in measured energy.}
 \label{fig:e2-controller-vs-baseline}
 \end{figure}
 
-To place that single point against alternatives, we swept two simpler
-baselines retroactively over the same 1{,}074 questions, using the
-boundary-level data (token position, entropy, and a matching power
-measurement at each sentence boundary) already collected for the
-analysis in Section~\ref{sec:e1v2} -- no further Pi time was needed for
-this part. Both baselines decide at the same sentence-boundary
-granularity as every other method in this paper, so the comparison is
-not giving either one an unfair resolution advantage. A fixed
-\texttt{max\_tokens} budget, swept from 30 to 500 tokens, traces a
-smooth curve from 46.1\% accuracy at 57.3\,kJ up to 81.7\% at 238.0\,kJ,
-approaching but never quite reaching the no-stopping baseline's 81.9\%
-at 246.7\,kJ. Sweeping the entropy threshold instead (the same nine
-threshold values used throughout this paper) behaves differently: even
-at its most conservative setting, entropy never uses more than
-66.4\,kJ, and accuracy actually falls as the threshold is relaxed,
-from 52.0\% down to 42.4\% -- consistent with the precision ceiling of
-roughly 0.75 already established for this signal, entropy triggers
-often enough, and wrongly enough, that a real deployed policy built on
-it cannot reach either the accuracy of a generous token budget or of
-our controller, at any point along its own range.
+To compare our controller with simpler alternatives, we also evaluated a
+fixed \texttt{max\_tokens} limit and an entropy-threshold baseline on the
+same 1{,}074 questions. We used the boundary-level data already collected
+in Section~\ref{sec:e1v2}, so no additional Raspberry Pi runs were needed.
+All methods were evaluated at sentence boundaries. For the \texttt{max\_tokens} baseline, increasing the token limit improved
+accuracy but also increased energy use. Across limits from 30 to 500 tokens,
+accuracy increased from 46.1\% at 57.3\,kJ to 81.7\% at 238.0\,kJ, close
+to the no-stopping result of 81.9\% at 246.7\,kJ.
+
+The entropy baseline used much less energy, but its accuracy was lower.
+Across the tested thresholds, energy use stayed below 66.4\,kJ, while
+accuracy fell from 52.0\% down to 42.4\% as the threshold was relaxed.
+This is consistent with the earlier result that entropy alone has limited
+precision and can stop too early. As a result, it does not reach the
+accuracy of either a generous token limit or our controller.
 
 \begin{figure}[t]
 \centering
@@ -940,7 +915,7 @@ robust to this even under a generous hardware-slowdown assumption.
 
 \textbf{Boundary-detection cost.} The dominant real cost of a stopping
 decision is not the probe but the \texttt{/embeddings} call needed to
-obtain the hidden state in the first place. Measured directly on the
+obtain this representation in the first place. Measured directly on the
 Pi (Section~\ref{sec:e2}'s diagnosis of the negative-savings run),
 this call's latency grows linearly with accumulated context: from
 374ms at 100 characters up to 5{,}715ms at 2{,}000 characters.
