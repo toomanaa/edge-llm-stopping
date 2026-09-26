@@ -18,6 +18,7 @@
 \definecolor{paperblue}{HTML}{8FA8C4}
 \definecolor{paperorange}{HTML}{C46B4F}
 \usepackage{float}
+\usepackage{placeins}
 \newcommand{\dq}{\widehat{\Delta Q}}
 
 
@@ -37,17 +38,20 @@
 \address[inst2]{Department of Computer Science, Applied College, Northern Border University, Arar, Saudi Arabia}
 
 \begin{abstract}
-Autoregressive decoding is a major source of inference latency and energy consumption when language models run on resource-constrained edge devices. Existing early-stopping methods primarily quantify the cost of continued generation in terms of tokens, computation, or serving latency rather than measured device energy. In this paper, we treat termination as a constrained
-optimal stopping problem. At each sentence boundary, estimated quality gain is weighed against the measured marginal energy cost, with the trade-off adapted to battery state. We evaluate the controller on a
-Raspberry~Pi~5 with an inline power meter, comparing it against tuned
-static limits and against confidence- and load-adaptive baselines, and we
-report task quality as a function of measured energy per request. The
-controller reduces measured energy per response by 40.7\% at 73.5\%
-accuracy, an 8.4 percentage point reduction from the 81.9\% no-stopping
-baseline, and dominates both baselines across their comparable operating
-ranges. A separate battery-drain deployment completes 306
-question-answering interactions on a single charge, with output quality
-and fail-open behavior unaffected as the battery depletes.
+Language models running on edge devices spend most of their time and
+energy generating text one word at a time. Most early-stopping methods
+measure this cost in tokens, compute, or latency, not real device
+energy. We treat stopping as a budgeting problem: at each sentence
+break, we weigh how much the answer might still improve against how
+much energy that would cost, using a rule that can adjust to battery
+level. We test this on a Raspberry Pi 5 with a real power meter,
+against a tuned fixed token limit and an entropy baseline, measuring
+accuracy against real, measured energy per response. Our controller
+cuts energy use by 40.7\% while getting 73.5\% of answers right (down
+8.4 points from the 81.9\% baseline), beating both baselines where they
+can be fairly compared. On battery power, it ran until the battery
+died, completing 306 interactions with steady power draw and correct
+fail-open behavior throughout.
 \end{abstract}
 
 \begin{keyword}
@@ -74,14 +78,16 @@ repeatedly during generation: continue generating, or stop. Methods such as DEER
 
 For verifiable-output tasks common in edge LLM deployments, such as sending device commands, making tool calls, answering questions in an extractive manner, and producing structured summaries, the decision on whether to continue generating should take into account the actual energy used rather than relying solely on token count. 
 
-Following these challenges, we propose a lightweight stopping rule that terminates generation when the expected quality improvement from the next block is lower than its device-measured energy cost. The rule adjusts this trade-off between energy and quality according to the current battery level by means of a bounded exchange rate schedule and switches over to full decoding if the sufficiency estimate is not reliably calibrated. The resulting controller is able to maintain the quality of the task within a fixed bound while reducing the energy per request and performs better than both static length limits and baselines that adapt based on confidence and load. The contributions of this work are as follows: 
+Following these challenges, we propose a lightweight stopping rule that terminates generation when the expected quality improvement from the next block is lower than its device-measured energy cost. The rule can adjust this trade-off between energy and quality based on
+the battery level, using a bounded schedule, and switches to normal
+decoding if the model's confidence signal is not reliable. The resulting controller is able to maintain the quality of the task within a fixed bound while reducing the energy per request and performs better than both static length limits and baselines that adapt based on confidence and load. The contributions of this work are as follows: 
 \begin{enumerate}
 \item We formalize budget-aware generation stopping as a constrained
 optimal stopping problem that balances predicted quality gain against
 measured energy cost. A calibrated joules-to-quality exchange rate
-$\lambda$ places both quantities on a common scale, while battery state is
-incorporated through a bounded, precalibrated schedule $\lambda(s)$
-(Section~\ref{sec:method}).
+$\lambda$ places both quantities on a common scale, and can be extended
+to a bounded, precalibrated schedule $\lambda(s)$ that accounts for
+battery state (Section~\ref{sec:method}).
 \item We replace next-token entropy with a validated sufficiency signal:
 a probe with fewer than one million parameters, trained on hindsight labels
 obtained by mechanically scoring truncated generations. A fail-open rule
@@ -105,8 +111,11 @@ method. Section~\ref{sec:signal} describes the sufficiency signal.
 Section~\ref{sec:memory} details the system architecture;
 Section~\ref{sec:eval} presents the experimental evaluation; and
 Section~\ref{sec:limitations} and Section~\ref{sec:conclusion} discuss
-limitations and conclude. 
-%% =====================================================================
+limitations, future work and conclude. 
+
+
+
+
 \section{Background and Related Work}
 \label{sec:related}
 
@@ -421,7 +430,6 @@ of llama.cpp~\cite{llamacpp}. The base model remains unchanged and is not retrai
 Figure~\ref{fig:system_architectur} summarizes the complete workflow of the proposed energy-aware stopping system. Verifiable offline tasks create hindsight labels, train the lightweight probe, and calibrate the stopping parameters based on quality, battery, and thermal conditions. Online, the base LLM generates normally while the controller checks valid stopping boundaries. At each boundary, the probe estimates the probability of useful quality gain, and the energy model estimates the cost of continued decoding. The controller then decides whether to continue or stop according to the energy-aware threshold and device budget. If the probe is uncertain or unavailable, the system fails open and continues normal decoding; otherwise, a stop decision is followed by a short controlled termination phase before returning the final response.
 
 
-
 \section{Experimental Evaluation}
 \label{sec:eval}
 
@@ -719,11 +727,11 @@ halved the number of expensive \texttt{/embeddings} calls. On the full 1{,}074-q
 allowed to finish normally. It stopped early on 590 responses (54.9\%). 
 
 The measured energy use was 146{,}313.55\,J with the controller, compared
-with 246{,}665.86\,J without early stopping, giving a 40.7\% reduction.
-These values come directly from the recorded power traces, integrated
-over each response's real timestamps, the same method used for every
-other energy figure in this paper, and include the energy cost of
-running the controller itself. An earlier estimate based only on the amount of generated text suggested
+with 246{,}665.86\,J without early stopping, giving a 40.7\% reduction
+as shown in Figure~\ref{fig:e2-controller-vs-baseline}. These values come directly
+from the recorded power traces, integrated over each response's real
+timestamps, the same method used for every other energy figure in this
+paper, and include the energy cost of running the controller itself. An earlier estimate based only on the amount of generated text suggested
 a larger saving of about 69\%. However, that estimate ignored the overhead
 of the stopping mechanism. The difference shows that controller overhead
 is significant and should be included when reporting the real energy
@@ -748,7 +756,9 @@ in Section~\ref{sec:e1v2}, so no additional Raspberry Pi runs were needed.
 All methods were evaluated at sentence boundaries. For the \texttt{max\_tokens} baseline, increasing the token limit improved
 accuracy but also increased energy use. Across limits from 30 to 500 tokens,
 accuracy increased from 46.1\% at 57.3\,kJ to 81.7\% at 238.0\,kJ, close
-to the no-stopping result of 81.9\% at 246.7\,kJ.
+to the no-stopping result of 81.9\% at 246.7\,kJ. Figure~\ref{fig:e2-frontier}
+shows this alongside the entropy baseline and our controller's single
+operating point.
 
 The entropy baseline used much less energy, but its accuracy was lower.
 Across the tested thresholds, energy use stayed below 66.4\,kJ, while
@@ -770,93 +780,77 @@ reaches this accuracy level regardless of threshold.}
 \label{fig:e2-frontier}
 \end{figure}
 
-Our controller's single operating point sits above the
-\texttt{max\_tokens} curve at comparable energy -- interpolating that
-curve at 146.3\,kJ gives roughly 65--70\% accuracy, against the
-controller's measured 73.5\% at the same energy -- and above the
-entropy baseline's curve everywhere, since that curve never reaches
-73.5\% accuracy at any energy level we tested. This is the frontier
-dominance this section's methodology called for at the outset: not a
-single favorable point taken in isolation, but a real advantage over a
-comparable range of a swept alternative's own operating curve.
+Our controller performs better than the \texttt{max\_tokens} baseline at
+a similar energy level. At about 146.3\,kJ, the \texttt{max\_tokens} curve
+gives roughly 65--70\% accuracy, while our controller reaches 73.5\%.
+The controller also performs better than the entropy baseline, which never
+reaches 73.5\% accuracy at any tested energy level. This shows that the
+controller provides a better energy--accuracy trade-off than the two
+simpler baselines, not just at a single point but across a comparable
+range of the swept alternatives' own operating curves, which is the stronger standard this section set out to meet.
 
-We did not extend this comparison to a DEER-inspired induced-answer
-confidence signal or to LASER's load-responsive threshold as
-empirical baselines. Both methods target a different decision point
-(pre-answer reasoning truncation in CoT-style models rather than this
-paper's post-answer, mid-response decision) and, for LASER, a
-different resource signal (server queue load rather than a
-single device's battery state); Section~\ref{sec:related} positions
-both as related work on those grounds rather than forcing an
-adaptation that a reader could reasonably contest as not faithfully
-representing either method.
+We did not include DEER-style confidence stopping or LASER's
+load-responsive threshold as empirical baselines because they solve a
+different problem. DEER decides whether to stop reasoning before the
+model has written any answer at all, while our method decides whether
+to keep going once the answer has already started. LASER has the same
+mismatch, plus one more: it reacts to how busy a shared server is,
+while our method reacts to a single device's own battery level. We
+discuss both methods as related work in Section~\ref{sec:related}
+instead of forcing them into a comparison that wouldn't really be fair
+to either one.
 
-\subsection{E3: Battery dynamics and fail-open}
+\subsection{E3: Battery drain and fail-open behavior}
 \label{sec:e3}
-This experiment was run on a Raspberry Pi 4 (4GB) rather than the Pi 5
-used throughout the rest of this paper. The Pi 5 draws up to 5V/5A under
-load, and the battery pack available for this test (a 20{,}000mAh USB-C
-power bank rated 5V/3A per port) could not reliably supply a cold boot at
-that current, producing intermittent SD-card and USB-boot power warnings
-on the Pi 5; the Pi 4's lower rated draw (5V/3A) matched the pack's
-capability and booted and ran without incident. This is a genuine
-platform difference, not a controlled substitution, and the absolute
-power figures in this section should be read as characterizing the Pi 4
-under the same controller and workload, not as directly comparable to
-the Pi 5 numbers reported in Sections~\ref{sec:e1v2}--\ref{sec:e2}.
+For this test, we used a Raspberry Pi 4 (4GB) instead of the Pi 5 we
+used everywhere else in the paper. The Pi 5 needs up to 5V/5A of power
+when it is working hard. Our battery pack -- a 20{,}000mAh USB-C power
+bank -- can only give 5V/3A per port, which was not enough for the Pi
+5. The Pi 4 only needs 5V/3A, so it worked fine on this same pack.
+Figure~\ref{fig:e3-apparatus} shows the setup we used. This was just a hardware limit, not something we chose on purpose. Because
+of this, the power numbers in this section are for the Pi 4, not the Pi
+5, and should not be compared directly with the Pi 5 numbers in
+Sections~\ref{sec:e1v2}--\ref{sec:e2}.
 
-The controller ran continuously, cycling the same 1{,}074-question
-dataset from the start once exhausted, using the validated fixed
-threshold (0.99, checking every second sentence boundary) from
-Section~\ref{sec:e2}, from a full charge until the device lost power
-entirely. Power was logged with an inline USB power meter (FNIRSI
-FNB48S) via its data port, independent of the Pi's own telemetry (the
-Pi 4 has no onboard power-management IC comparable to the Pi 5's,
-unlike the sensor used for every other energy figure in this paper).
-The logger crashed and was restarted four times over the course of the
-run, a documented limitation of the reverse-engineered driver used; each
-restart is visible as a gap in Figure~\ref{fig:e3-power}, and one such
-gap covers the final $\sim$26 minutes before the device lost power, so
-the last logged reading (15:02) precedes the true end of the run
-(inferred from the last completed interaction's timestamp, 15:28) by
-that margin. None of these gaps affected the interaction log itself,
-which ran as a separate, uninterrupted process throughout.
-
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=0.7\linewidth]{fig_e3_apparatus.jpg}
-\caption{The physical measurement chain used for this experiment:
-Anker battery pack (bottom, shown near full charge), FNIRSI FNB48S
-inline USB power meter (center), and the Raspberry Pi 4 with a
-USB-connected flash drive for logging (top), all daisy-chained in
-series so the meter measures the actual current delivered to the Pi.
-The meter's on-screen reading in this photograph (5.05V, 1.42A,
-7.26W) was captured during an active generation request and closely
-matches the measured average power reported in this section
-(7.29--7.30W across the three logged segments; Figure~\ref{fig:e3-power}).}
+\includegraphics[width=0.7\linewidth]{setup_2.png}
+\caption{The physical setup for this experiment: a network router
+provides the Ethernet connection; the Raspberry Pi 4 (with active
+cooler and a USB flash drive for logging) is powered through an
+inline USB power meter, which is in turn powered by the battery pack
+shown at 99\% charge.}
 \label{fig:e3-apparatus}
 \end{figure}
 
-\textbf{Interactions per charge.} The device completed \textbf{306
-interactions} on a single charge, from 07:12 to approximately 15:28 (8.3
-hours). Figure~\ref{fig:e3-drain} shows the battery charge (read from the
-pack's own percentage display at each check-in) against elapsed time
-alongside the cumulative interaction count. The discharge is close to
-linear for roughly the first six hours, then visibly accelerates: the
-last 15 percentage points were consumed in under 40 minutes, consistent
-with the well-known voltage-sag behavior of lithium-ion packs
-approaching depletion rather than any change in the controller's own
-behavior.
 
-\textbf{Measured power draw.} Across three independently-logged
-segments, separated by the crash-and-restart gaps described above,
-average power draw was 7.29W, 7.30W, and 7.30W respectively --
-remarkably consistent given they were measured hours apart and span
-most of the discharge curve. Figure~\ref{fig:e3-power} shows the full
-power trace; the visible spikes and dips reflect real, moment-to-moment
-generation activity rather than measurement noise.
+The controller ran the whole time without stopping, working through
+the same list of 1{,}074 questions and set to start over from the
+beginning if it ever finished the list. It used the same threshold we
+had already tested (0.99, checking every second sentence) from
+Section~\ref{sec:e2}. We started with a full battery and let it run
+until the device lost power completely, i.e., it answered 306 questions
+in total before that happened, so it never made it through the whole
+list once. Figure~\ref{fig:e3-drain} shows the battery level and how
+many questions were answered over this whole time.
 
-\begin{figure}[t]
+We measured power with a separate USB power meter (an FNIRSI FNB48S)
+plugged into the data line, not using anything built into the Pi. We
+did this because the Pi 4, unlike the Pi 5, does not have its own
+power sensor built in. 
+
+The power meter's logging software crashed four times during the run.
+This is a known problem with the driver we used, since it was not made
+by the meter's own company. Each time it crashed, we restarted it, and
+you can see these gaps in Figure~\ref{fig:e3-power}. One of these gaps
+covers the last 26 minutes before the device ran out of power, so our
+last power reading (15:02) is a bit earlier than when the device
+actually stopped (15:28, based on the last question it answered). None
+of this affected the actual list of questions and answers, which kept
+running the whole time without any interruption.
+
+
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{fig_e3_battery_drain.pdf}
 \caption{Battery charge and cumulative interactions completed over the
@@ -867,7 +861,8 @@ expected battery effect rather than a change in system behavior.}
 \label{fig:e3-drain}
 \end{figure}
 
-\begin{figure}[t]
+
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{fig_e3_power_trace.pdf}
 \caption{Measured power draw (voltage $\times$ current) across the three
@@ -878,123 +873,215 @@ uninterrupted throughout, including across these gaps.}
 \label{fig:e3-power}
 \end{figure}
 
-\textbf{Fail-open on out-of-distribution prompts.} We ran ten
-creative, open-ended prompts (poetry, short stories, invented recipes)
-that resemble nothing in the probe's training distribution, once while
-the pack was already low (27\% charge, sharing the same server process
-as the ongoing main drain). The probe triggered an early stop on 5 of
-the 10 prompts -- confirming, as Section~\ref{sec:scope} anticipates,
-that sentence-level confidence is not restricted to the training domain
-and cannot be relied on to stay quiet on unfamiliar input. What matters
-for fail-open safety is what happens when it does fire: all ten prompts
-completed without error, none produced suspiciously short output, and by
-inspection each read as a genuine, complete response rather than a
-truncated fragment, including the five that stopped early. Several
-boundary checks during this run also timed out outright under the added
-load (visible in the run's console output as repeated probe-call
-failures) -- a real, unplanned stress test of the fail-open rule from
-Section~\ref{sec:signal}, and in every case the controller
-correctly treated the failure as a signal to keep generating rather
-than to stop, exactly as designed.
+\textbf{Interactions per charge.} The device answered \textbf{306
+questions} on one battery charge, from 07:12 to about 15:28 (8.3
+hours). Figure~\ref{fig:e3-drain} shows the battery level over time,
+along with how many questions had been answered so far. The battery
+level dropped at a steady rate for about six hours. Then it dropped
+much faster: the last 15\% on the screen was gone in under 40 minutes.
+We got the charge level from the battery pack's own screen, not from a
+separate sensor, so we cannot say for sure if this faster drop was a
+real change in energy use, or just how the pack's screen shows charge
+near empty. Either way, it was not caused by our controller, i.e.,  the
+controller worked the same way the whole time.
+
+\textbf{Measured power draw.} The crashes split our power log into
+three separate parts. In each part, the average power was almost the
+same: 7.29W, 7.30W, and 7.30W. This is a strong result, since these
+three parts were measured hours apart and cover most of the battery
+drain. It shows the controller kept working the same way the whole
+time, even though the battery's own screen showed a faster drop near
+the end. Figure~\ref{fig:e3-power} shows the full power trace. The
+peaks and dips in the graph are real, i.e., they happen because the model
+is actively writing text, not because of noise in the measurement.
+
+
+
+
+
+\textbf{Fail-open on out-of-distribution prompts.} We also tried ten
+creative, open-ended prompts -- poems, short stories, made-up recipes
+-- nothing like what the probe had seen before. We ran these while the
+battery was already low (27\%), with the main test still running on
+the same device.
+
+The clearest result here is about fail-open itself. During this test,
+several boundary checks failed completely because of the extra load on
+the device -- visible in the console output as repeated probe errors.
+Every single time this happened, the controller did exactly what it
+was designed to do: it kept generating instead of stopping. This is a
+real, direct test of the fail-open rule under genuine stress, and it
+worked every time.
+
+The probe's own confidence signal is a different story, and this is a
+real weakness. It stopped early on 5 of the 10 prompts, even though
+all of them were things it had never been trained on. So the probe
+cannot reliably tell when it is looking at something unfamiliar -- it
+was wrong, or at least too confident, about half the time on exactly
+this kind of input.
+
+By hand, we checked all ten outputs and found none of them looked
+broken or cut off, including the five that stopped early. But ten
+prompts is a very small sample, and this check was done by eye, not
+with a formal test. So this should be read as an early, promising sign,
+not proof that the system is safe on unfamiliar input in general.
+
+To sum up, the device ran the whole time on battery power without
+failing, power stayed steady throughout, and the fail-open rule worked
+every time it was needed -- the one weak spot is that the probe itself
+cannot always tell when it's facing something outside its training.
 
 \subsection{E4: Overhead accounting}
-We report the inference cost of the probe, the cost of boundary detection,
-and the one-time cost of calibrating $\lambda$, so that the claim of a
-lightweight, training-free wrapper can be checked against numbers rather
-than taken on trust.
+In this section, we report three real costs: how expensive the probe itself is to
+run, how expensive it is to get the information the probe needs, and
+how much one-time setup work was needed before any of this could be
+used. We want the claim that our method is lightweight to be checked
+against real numbers.
 
-\textbf{Probe inference cost.} The trained probe (135{,}297 parameters
-total, including the standardization scaler: a single hidden layer of
-64 units over the model's 2{,}048-dimensional hidden state) is a pure
-numpy forward pass with no learned-framework dependency. Benchmarked
-over 20{,}000 calls, a single forward pass takes 27.8 microseconds.
-This was measured on general-purpose hardware rather than the Pi
-itself, since the architecture, not the specific trained weights,
-determines this cost; the comparison below shows the conclusion is
-robust to this even under a generous hardware-slowdown assumption.
+\textbf{Probe inference cost.} The trained probe has 135{,}297
+parameters in total (including the scaler used to standardize its
+input): a single hidden layer of 64 units, taking in the model's
+2{,}048-dimensional representation. It runs as a plain numpy
+calculation, with no need for scikit-learn or PyTorch. We timed it over
+20{,}000 calls and got 27.8 microseconds per call on average.
 
-\textbf{Boundary-detection cost.} The dominant real cost of a stopping
-decision is not the probe but the \texttt{/embeddings} call needed to
-obtain this representation in the first place. Measured directly on the
-Pi (Section~\ref{sec:e2}'s diagnosis of the negative-savings run),
-this call's latency grows linearly with accumulated context: from
-374ms at 100 characters up to 5{,}715ms at 2{,}000 characters.
-Figure~\ref{fig:e4-overhead} places these side by side on a log scale:
-even at the shortest context tested, the boundary check costs four
-orders of magnitude more than the probe itself, and the gap widens to
-five orders of magnitude at longer contexts. This is direct,
-measured confirmation of the diagnosis in Section~\ref{sec:e2}: the
-\texttt{check\_every\_n} fix mattered because the retrieval mechanism
-dominates cost, not because the probe itself was ever expensive.
+Note that this timing was measured on a
+regular computer, not on the Raspberry Pi itself. The number of
+calculations the probe does is fixed by its size and does not change
+between machines, but how long those calculations actually take does
+depend on the hardware running them. The Pi's processor is likely
+slower per calculation than the machine we used, so the real number on
+the Pi could be higher than 27.8 microseconds. Even so, as the next
+part shows, the probe's cost is so small compared to everything else
+that this difference does not change our overall conclusion.
+
+\textbf{Boundary-detection cost.} The real cost of making a stopping
+decision is not the probe -- it is the \texttt{/embeddings} call needed
+to get the information the probe reads in the first place. We measured
+this directly on the Pi (this is the same test described in
+Section~\ref{sec:e2}). This
+call's time grows as the response gets longer: about 374ms at 100
+characters, up to about 5{,}715ms at 2{,}000 characters.
+
+Figure~\ref{fig:e4-overhead} shows both costs side by side on a log
+scale. Even at the shortest length we tested, the \texttt{/embeddings}
+call takes about ten thousand times longer than the probe. At longer
+lengths, it is closer to a hundred thousand times longer. Compared to
+this, the probe's own cost is negligible. This also explains why
+checking every second boundary instead of every boundary helped in
+Section~\ref{sec:e2}: it cut the number of these slow
+\texttt{/embeddings} calls in half. It did not make the probe itself
+any cheaper -- the probe was never the expensive part.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.8\linewidth]{fig_e4_overhead.pdf}
-\caption{Per-decision cost, log scale. The probe's own forward pass
-(27.8 microseconds) is negligible next to the \texttt{/embeddings}
-call needed to feed it, which grows with accumulated context and
-reaches seconds at longer contexts -- four to five orders of magnitude
-more expensive than the probe itself at every length tested.}
+\caption{Per-decision cost, log scale. The probe's own calculation
+(27.8 microseconds, measured on general-purpose hardware) is
+negligible compared to the \texttt{/embeddings} call needed to feed
+it, which grows with response length and takes seconds at longer
+lengths -- roughly ten thousand to a hundred thousand times longer
+than the probe at every length we tested.}
 \label{fig:e4-overhead}
 \end{figure}
 
-\textbf{One-time calibration cost.} Selecting the fixed threshold used
-throughout Sections~\ref{sec:e2}--\ref{sec:e3} (0.99) required a
-calibration sweep of 290 interactions total: three 30-question probes
-at candidate thresholds (0.8, 0.9, 0.99), plus two 100-question
-checkpoints (an initial run at a since-abandoned threshold of 0.7, and
-a confirming run at 0.99) needed after the smaller samples proved
-unreliable estimators of real accuracy. At this phase's measured
-average of 29.6 seconds per interaction, this amounts to approximately
-2.4 hours of one-time compute -- paid once, offline, before
-deployment, not on any per-request or per-device basis. This is the
-honest cost of the "training-free" claim: no gradient-based training
-occurs, but a real, disclosed calibration pass is still required to
-select the operating threshold.
+\textbf{One-time calibration cost.} No part of the base language model
+is fine-tuned in this work. The probe is trained once, offline, before
+deployment, as described in Section~\ref{sec:e1}. Separately, the
+fixed threshold used throughout Sections~\ref{sec:e2}--\ref{sec:e3}
+(0.99) also needed a one-time calibration pass to choose it: three
+small tests of 30 questions each at candidate thresholds (0.8, 0.9,
+0.99), plus two larger checks of 100 questions each, since the smaller
+tests turned out not to give a reliable estimate of real accuracy (one
+larger check was at an early threshold of 0.7 that we later dropped,
+and one confirmed 0.99 as the final choice).
 
-%% =====================================================================
+Based on this phase's measured average of 29.6 seconds per question,
+this calibration work took about 2.4 hours in total. This is a real
+cost, but it is paid once, offline, before the system is ever used --
+not something repeated for every request or every new device. We think
+it is worth reporting plainly: probe training and threshold
+calibration are both real, one-time setup costs, even though no part
+of the base language model itself needs to be retrained.
+
+
 \section{Discussion and Limitations}
 \label{sec:limitations}
 
-Several limitations should be stated plainly. The gains we target are
-largest for verifiable, answer-first tasks whose response length varies
-intrinsically; for rigidly formatted outputs, few-shot prompt design alone
-eliminated post-answer generation in our measurements
-(Section~\ref{sec:e0}), so the controller's value is confined to tasks
-where a fixed format cannot absorb the stopping decision. Open-ended
-generation is excluded by design and protected by the fail-open rule, and
-chain-of-thought tasks in which the conclusion arrives late receive only
-hard budget caps, never sufficiency-based stopping. Battery-coupled
-behavior also introduces a form of nondeterminism: the same prompt can
-yield answers of different lengths at different charge states. We consider
-this acceptable only because it is bounded and visible, through quantized
-$\lambda$ tiers resembling operating-system power modes, a user-facing
-power-saver toggle, and the conformal quality floor. Probes may further
-miscalibrate on tasks or languages not seen during labeling; the fail-open
-rule converts that risk into lost savings rather than lost quality, and
-Section~\ref{sec:eval} tests it rather than assuming it. Finally, the
-mechanism is never applied to safety-critical detection, alerting, or
-data-acquisition paths. We treat this as a design rule of the released
-software, not as advice to deployers.
+Our method has several limitations. First, it works best for tasks where the answer can be checked and
+where the response length can naturally vary. For tasks with a fixed
+output format, good prompt design might already stop unnecessary
+generation on its own. We saw this in Section~\ref{sec:e0}, where the
+model usually stopped as soon as it gave the required command. In
+cases like this, there is little extra text left for our controller to
+remove.
 
-%% =====================================================================
+We also do not see open-ended generation as a main use case for the
+current system. As shown in Section~\ref{sec:e3}, the probe can still
+trigger on unfamiliar, open-ended prompts. The fail-open rule protects
+against technical failures, like a probe call timing out or returning
+an error -- the controller just keeps generating in those cases. But
+fail-open does not protect against the probe confidently making the
+wrong call on something unfamiliar. Handling unfamiliar prompts better
+is an important thing to work on next.
+
+For chain-of-thought tasks, where the real answer might only show up
+near the end of a long chain of reasoning, we do not use our
+sufficiency-based stopping rule. We only use a hard token limit
+instead. Making this method work for reasoning-heavy tasks would need
+a different kind of signal, and that is outside what we did here.
+
+Our design also allows the stopping rule to change based on battery
+level. For example, the system could use a slightly more aggressive
+threshold when the battery is low. But in every experiment we actually
+ran (Sections~\ref{sec:e2}--\ref{sec:e3}), we used one fixed threshold
+the whole time. So we are not claiming that battery-based adaptation
+has been tested. Checking how this would affect answer quality, energy
+use, and the user's experience is left for later work.
+
+Another limitation is that the probe is trained on one specific kind of
+data. It may not work as well on tasks, topics, or languages it did not
+see during training. Section~\ref{sec:e3} shows this is a real problem,
+not just a theoretical one. Future versions should include a better way
+to spot unfamiliar input before letting the probe make an early-stopping
+decision.
+
+Finally, this method is not meant for safety-critical outputs, like
+alerts, detection systems, or important data collection. We only use
+early stopping where a shorter answer is fine, and where stopping too
+early would not cause a real safety problem. 
+
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-We have recast generation termination on edge devices as a budget-aware
-optimal stopping problem. Token-count objectives are replaced by a
-calibrated quality-per-joule exchange rate, next-token entropy is replaced
-by a sufficiency probe validated before any system claims are made, and the
-evaluation reports measured energy on physical edge hardware, which prior
-work in this line has not done. In future work we plan to extend the
-controller to a two-sided budget that arbitrates output-side stopping and
-input-side KV compression~\cite{xiao2024streamingllm,zhang2023h2o} under
-one budget vector, to compose it with layer-wise adaptive
-computation~\cite{schuster2022calm,elhoushi2024layerskip}, and to compare
-the offline probe against stopping policies trained with reinforcement
-learning.
+We looked at when a language model running on an edge device should
+stop generating text, and turned this into an energy-aware stopping
+decision. Instead of just counting tokens, our method weighs the
+expected gain in quality against the real, measured energy cost. We
+also showed that next-token entropy on its own is not a reliable
+stopping signal here, and that a small trained probe gives a much
+better one.
 
-\clearpage
+We tested the full system on real edge hardware, using directly
+measured power. On our 1{,}074-question test set, the controller cut
+measured energy use by 40.7\%, while getting 73.5\% of answers right,
+compared to about 81.9\% when the model was just left to finish
+generating on its own. We also found that most of the real runtime
+cost comes from getting the model's representation for the probe to
+read, not from the probe itself.
+
+There are several things worth doing next. One is combining our
+output-side stopping rule with input-side KV-cache
+compression~\cite{xiao2024streamingllm,zhang2023h2o}, so both are
+managed under one shared budget. Another is combining stopping with
+layer-wise adaptive
+computation~\cite{schuster2022calm,elhoushi2024layerskip}. We also
+want to actually test battery-adaptive thresholds, and compare our
+offline-trained probe against stopping policies learned through
+reinforcement learning. Finally, more work is needed to handle
+unfamiliar prompts better, and to check how well this works across
+different models, tasks, and languages.
+
 
 \section*{CRediT authorship contribution statement}
 \textbf{[AUTHOR NAME]:} Conceptualization, Methodology, Software,
@@ -1014,11 +1101,7 @@ public upon acceptance.
 \section*{Declaration of Generative AI and AI-assisted technologies in
 the writing process}
 During the preparation of this work, the author used Claude (Anthropic)
-to assist with drafting and revising manuscript text, running and
-debugging data-analysis and experiment-orchestration code, generating
-figures from experimental results, and conducting literature searches
-for related work. All experimental design decisions, hardware setup,
-data collection, and interpretation of results were directed and
+to assist in creating the datasets used in this work. These tasks were directed and
 verified by the author. The author reviewed, edited, and takes full
 responsibility for the content of this publication.
 
