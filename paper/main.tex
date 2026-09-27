@@ -1,0 +1,1111 @@
+\documentclass[review,12pt]{elsarticle}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{lineno}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{float}
+\definecolor{paperblue}{HTML}{8FA8C4}
+\definecolor{paperorange}{HTML}{C46B4F}
+\usepackage{float}
+\usepackage{placeins}
+\newcommand{\dq}{\widehat{\Delta Q}}
+
+
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Budget-Aware Stopping for Edge LLM Generation: Pricing the Continue-or-Stop Decision in Measured Energy}
+
+\author[inst1]{Ibrahim Alghamdi}
+\address[inst1]{Computer Science Department, Faculty of Computing and Information, Al-Baha University, Al-Baha, Saudi Arabia}
+
+\author[inst2]{Saad Alahmari\corref{cor1}}
+\ead{saad.alahmari@nbu.edu.sa}
+\cortext[cor1]{Corresponding author}
+\address[inst2]{Department of Computer Science, Applied College, Northern Border University, Arar, Saudi Arabia}
+
+\begin{abstract}
+Language models running on edge devices spend most of their time and
+energy generating text one word at a time. Most early-stopping methods
+measure this cost in tokens, compute, or latency, not real device
+energy. We treat stopping as a budgeting problem: at each sentence
+break, we weigh how much the answer might still improve against how
+much energy that would cost, using a rule that can adjust to battery
+level. We test this on a Raspberry Pi 5 with a real power meter,
+against a tuned fixed token limit and an entropy baseline, measuring
+accuracy against real, measured energy per response. Our controller
+cuts energy use by 40.7\% while getting 73.5\% of answers right (down
+8.4 points from the 81.9\% baseline), beating both baselines where they
+can be fairly compared. On battery power, it ran until the battery
+died, completing 306 interactions with steady power draw and correct
+fail-open behavior throughout.
+\end{abstract}
+
+\begin{keyword}
+Edge computing \sep Large language models \sep Energy-aware inference \sep
+Early exit \sep Adaptive stopping \sep On-device AI
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+
+\section{Introduction}
+\label{sec:intro}
+
+Decoding in Large Language Models (LLMs) is often limited by memory bandwidth
+when running on edge hardware \cite{3692070.3692631}. During autoregressive decoding, each new token requires repeated access to model weights and the growing key--value (KV) cache \cite{3780338.3780461}. This increases memory traffic and causes per-token decoding latency and energy to rise as context length grows. Controlled measurements have shown that the length of the output is a major factor in determining the energy required for LLM inference, which has led to the development of methods designed to avoid unnecessary generation~\cite{poddar-etal-2025-towards}. At the same time, models
+generate far more text than their tasks require. Responses in common QA and instruction datasets are often longer than necessary to answer the task~\cite{poddar2025brevity}, while reasoning models can continue generating lengthy chains of thought with little additional benefit~\cite{chen2024overthinking}.
+
+For example, a voice assistant which preserves privacy is operated locally on a Raspberry~Pi~5. When asked to reduce the lights to 30\%, the model emits the tool call \texttt{dim(living\_room, 30)}, at which point the task is complete. It may nevertheless continue with a confirmation, an unrelated remark, or an offer of further assistance. Raspberry Pi platforms have been used in prior work to study the performance and resource costs of local LLM inference~\cite{Ardakani2025LLMPiOL}. On such resource-constrained devices, these additional tokens incur further memory traffic, latency, and energy consumption despite adding little task value. The problem becomes more important on a battery-powered device, where the acceptable cost of continued generation may change as the battery depletes. A fixed \texttt{max\_tokens} limit cannot capture this trade-off: a small value risks truncating useful answers, whereas a large value permits unnecessary generation.
+
+What is missing is a mechanism for a simple binary decision, taken
+repeatedly during generation: continue generating, or stop. Methods such as DEER~\cite{yang2025deer}, Dynasor~\cite{fu2025dynasor}, and LASER~\cite{tang2026laser} base their decision on reasoning progress, answer confidence, or system load and manage to reduce the number of generated tokens, computation, or latency considerably without suffering a significant loss in accuracy. However, these methods do not formulate the cost of continued generation directly in terms of measured device energy. DEER and Dynasor primarily target token or compute efficiency, while LASER optimizes quality and serving latency under changing system load. On bandwidth-constrained edge hardware, however, the marginal energy cost of continued decoding need not remain constant as context grows. A stopping policy based only on token count or latency therefore need not coincide with one that minimizes energy. Moreover, existing methods are designed primarily for reasoning-model generation, relying on signals such as reasoning transitions, intermediate answer certainty, or extended chain-of-thought structure that may not be available in ordinary instruction-following output from a lightweight edge model.
+
+For verifiable-output tasks common in edge LLM deployments, such as sending device commands, making tool calls, answering questions in an extractive manner, and producing structured summaries, the decision on whether to continue generating should take into account the actual energy used rather than relying solely on token count. 
+
+Following these challenges, we propose a lightweight stopping rule that terminates generation when the expected quality improvement from the next block is lower than its device-measured energy cost. The rule can adjust this trade-off between energy and quality based on
+the battery level, using a bounded schedule, and switches to normal
+decoding if the model's confidence signal is not reliable. The resulting controller is able to maintain the quality of the task within a fixed bound while reducing the energy per request and performs better than both static length limits and baselines that adapt based on confidence and load. The contributions of this work are as follows: 
+\begin{enumerate}
+\item We formalize budget-aware generation stopping as a constrained
+optimal stopping problem that balances predicted quality gain against
+measured energy cost. A calibrated joules-to-quality exchange rate
+$\lambda$ places both quantities on a common scale, and can be extended
+to a bounded, precalibrated schedule $\lambda(s)$ that accounts for
+battery state (Section~\ref{sec:method}).
+\item We replace next-token entropy with a validated sufficiency signal:
+a probe with fewer than one million parameters, trained on hindsight labels
+obtained by mechanically scoring truncated generations. A fail-open rule
+disables early stopping whenever the probe is uncalibrated
+(Section~\ref{sec:signal}).
+\item We quantify what stopping does and does not save. When the input
+context dominates, truncating the output frees only a small fraction of KV
+memory; the substantial savings are in energy and latency, and we report
+both (Section~\ref{sec:memory}).
+\item We evaluate adaptive generation stopping in measured joules on
+physical edge hardware with inline power metering, against a swept
+tuned static token limit and a swept entropy threshold
+(Section~\ref{sec:eval}), and position it relative to DEER- and
+LASER-style methods as related work (Section~\ref{sec:related}).
+\end{enumerate}
+
+The remainder of the paper is organized as follows: Section~\ref{sec:related}
+provides background and positions our work within the literature.
+Section~\ref{sec:method} formalizes the problem and presents the proposed
+method. Section~\ref{sec:signal} describes the sufficiency signal.
+Section~\ref{sec:memory} details the system architecture;
+Section~\ref{sec:eval} presents the experimental evaluation; and
+Section~\ref{sec:limitations} and Section~\ref{sec:conclusion} discuss
+limitations, future work and conclude. 
+
+
+
+
+\section{Background and Related Work}
+\label{sec:related}
+
+\subsection{Chain-of-thought and overthinking}
+Chain-of-thought (CoT) prompting~\cite{wei2022cot} improves performance on
+multi-step problems by having the model write out intermediate reasoning
+before the answer. Reasoning models such as
+DeepSeek-R1~\cite{guo2025deepseekr1} can generate extended CoT
+inside \texttt{<think>} delimiters, often 3{,}000--14{,}000 tokens per
+query~\cite{tang2026laser}. The resulting verbosity is known as
+overthinking~\cite{chen2024overthinking}, i.e., models keep reasoning, and
+occasionally talk themselves out of correct answers, well past the point at
+which the answer is effectively determined. This has led to
+a body of work on controlling test-time
+computation~\cite{snell2024testtime,xu2025chainofdraft,aggarwal2025l1}.
+
+\subsection{Optimal stopping theory applied to LLMs}
+\label{sec:related-optstop}
+This paper formalizes its stopping decision using optimal stopping
+theory~\cite{optimalST} (Section~\ref{sec:method}). Two recent papers apply the
+same theoretical approach to LLMs, but focus on a different level of decision-making than ours. Kalayci et al.~\cite{kalayci2025optstopbestofn} cast
+best-of-$N$ sampling as a Pandora's Box problem. Each full candidate
+generation is a costly box with an unknown reward, and their UCB-style
+algorithm decides how many independent generations to sample before
+stopping and returning the best one. Experiments on the AlpacaFarm and HH-RLHF datasets, using various combinations of language and reward models, show that their adaptive strategy can achieve the same performance as non-adaptive Best-of-N sampling while, on average, requiring 15 to 35 per cent fewer generations.
+Hammar et al.~\cite{hammar2026optstoprefine} formalize a
+self-refinement loop, i.e., a model iteratively revising its own complete
+output against verifier feedback, as an optimal stopping problem over
+the number of refinement rounds, deriving policies computed via
+stochastic approximation. Both papers offer a real theoretical contribution.
+They both work at a higher level than the decision we focus on.
+Their stopping variable counts complete, independent generation
+or refinement attempts, measured in general inference cost. In our case,
+the stopping decision happens within a single generation, at the level of
+sentence boundaries, and is measured in joules on the deployed device.
+The theoretical framework still applies, but the object being stopped and the
+way it is measured do not.
+
+\subsection{Confidence-based generation stopping}
+\label{sec:related-stopping}
+DEER~\cite{yang2025deer} tracks reasoning transition points, like 'Wait' or 'Alternatively', and treats these as possible chances for early exit. At these points, it induces the model to generate a trial answer and evaluates the model's confidence in that answer. If the confidence goes above a set threshold, e.g., $0.95$, DEER stops further reasoning and moves to the final conclusion. Across the evaluated models and benchmarks, DEER reduces CoT length while maintaining or improving accuracy. Dynasor-CoT~\cite{fu2025dynasor} uses a different approach to achieve the same goal. It checks the model's intermediate answer at regular intervals during reasoning and stops generation when successive answers remain consistent. In this way, certainty is measured through answer stability rather than relying on a single confidence score. The broader Dynasor serving system~\cite{fu2024certaindex} uses a related certainty signal, called Certaindex, to dynamically allocate compute resources across reasoning requests. LASER~\cite{tang2026laser} extends confidence-based early exit to the serving layer of an edge server. It uses an exponentially smoothed load signal to adapt the exit threshold through a bounded \texttt{tanh} function, lowering the threshold under high load and raising it under low load. In addition, a difficulty- and load-aware reasoning budget places a hard cap on the reasoning depth of each request. Together, these mechanisms reduce average latency by 17--38\% under varying request loads.
+Related approaches include answer-convergence
+stopping~\cite{liu2025answerconv} and length control trained with
+reinforcement learning~\cite{aggarwal2025l1}.
+
+The most similar work to ours is by Yu and Zhang, which was accepted at IEEE AIBThings 2026~\cite{yu2026ecogeniot}. Their EcoGenIoT framework also focuses on CPU-only local inference using a small quantized language model for low-power IoT and edge devices, and it makes online control decisions during generation. EcoGenIoT works at the response segment level and can choose between three actions: Continue, Stop, and Confirm. The Confirm action asks the user for clarification if the request is unclear, while our method does not include this interactive step. In their initial evaluation, using Qwen2.5-1.5B-Instruct-GGUF with llama.cpp, they report fewer output tokens and lower estimated energy use compared to uncontrolled generation and a concise-prompting baseline. Just like with DEER,
+Dynasor, and LASER, the resource term that guides the decision is estimated
+instead of being measured directly from a power sensor on the device, and the
+the evaluation is clearly marked as preliminary. Our work
+contribution is the measured case, i.e., a stopping rule priced in joules
+actually metered on the target hardware, evaluated at the scale of a
+full dataset with a live controller validated end to end and swept
+against alternatives on a real quality-energy frontier.
+
+Table~\ref{tab:taxonomy} summarizes this design space. DEER and Dynasor are
+motivated by reducing unnecessary reasoning, but their stopping rules do not
+incorporate a physical resource quantity: DEER relies on trial-answer
+confidence, while Dynasor uses the stability of successive intermediate
+answers. LASER introduces a system-level resource signal, but the quantity it
+tracks is server load rather than the physical energy consumed by the device,
+and its system-level evaluation is based on discrete-event simulation.
+EcoGenIoT is the closest in application domain, but its energy cost is
+estimated rather than measured directly from the target device, and its
+evaluation is preliminary.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{2pt}
+\caption{Design space of generation-stopping methods.}
+\label{tab:taxonomy}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{2.7cm}
+  >{\raggedright\arraybackslash}p{2.8cm}
+  >{\raggedright\arraybackslash}p{2.6cm}
+  >{\raggedright\arraybackslash}p{2.5cm}
+  >{\raggedright\arraybackslash}p{2.0cm}@{}}
+\toprule
+Method & Quality signal & Resource signal & Objective & Evaluation basis \\
+\midrule
+DEER~\cite{yang2025deer}
+& trial-answer confidence
+& none
+& tokens
+& token count/accuracy \\
+
+Dynasor-CoT~\cite{fu2025dynasor}
+& answer stability
+& none
+& tokens
+& token count/accuracy  \\
+
+LASER~\cite{tang2026laser}
+& trial-answer confidence
+& server load
+& latency\slash SLO
+& simulation \\
+
+EcoGenIoT~\cite{yu2026ecogeniot}
+& segment-level control
+& estimated energy
+& tokens\slash energy (est.)
+& preliminary \\
+
+Ours
+& learned probe
+& measured energy, battery
+& joules\slash request
+& metered device \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Layer-wise adaptive computation}
+In most research, early exit means reducing computation in the model, such as by skipping later layers during inference, rather than stopping the sequence generation process. For example, DeeBERT~\cite{xin2020deebert} lets an input leave an intermediate BERT layer when the prediction is confident enough. CALM~\cite{schuster2022calm} changes the number of Transformer layers used at each generation step.
+LayerSkip~\cite{elhoushi2024layerskip} allows early-layer exit and self-speculative decoding. In this approach, earlier layers make predictions that later layers use as guesses, and then check whether they are correct. These methods help lower
+the amount of computation needed to process or generate tokens, but they do not
+decide when the output sequence should stop. So, they are
+different from our stopping mechanism, but in principle, they could be combined
+with it. We do, however, use CALM's approach for calibrating
+thresholds, which we apply to the exchange rate as described in
+Section~\ref{sec:method}.
+
+\subsection{KV-cache management and energy-aware inference}
+StreamingLLM~\cite{xiao2024streamingllm}, H2O~\cite{zhang2023h2o}, and SnapKV~\cite{li2024snapkv} improve long-context inference by managing or compressing the KV cache to lower memory use and speed up decoding. These methods aim to make the cache more efficient and boost model performance, not to judge if extra generated text is useful for the task. We do not compete with this line of work;
+Section~\ref{sec:memory} explains why we regard it as the natural
+complement on the memory side. \par
+
+Separately, researchers in energy-aware systems have adjusted dynamic voltage and frequency scaling (DVFS) and batching settings to help edge hardware meet energy goals~\cite{maliakel2025dvfs}. Other studies found that even the way a prompt is worded can change how much energy is used during decoding on devices like the Raspberry Pi and smartphones~\cite{tao2026keyword}. For classification DNNs running on battery-powered devices, energy-aware early-exit policies have been designed using Markov decision processes~\cite{bullo2023sustainable}. These methods aim to optimize inference, work with non-generative models, or set behavior before generation begins. They do not decide in real time during text generation if producing more output is worth the extra energy. Figure~\ref{fig:positioning} shows how our work relates to existing approaches.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{PositioningOurWork.pdf}
+    \caption{Positioning of the proposed energy-aware generation-stopping
+    approach relative to existing methods. Existing approaches primarily
+    reduce tokens, computation, latency, or estimated energy, whereas this
+    work uses actual energy measured on the device to guide stopping
+    decisions for battery-aware on-device deployment.}
+    \label{fig:positioning}
+\end{figure*}
+
+
+
+\section{Problem Formalization}
+\label{sec:method}
+
+\subsection{The continue-or-stop decision}
+At each allowed boundary, which refers to the end of a sentence or an answer span,
+the controller has two options: continue generating
+or stop. Both types of error have a cost, but one may be more costly than the other. In other words, stopping too
+early breaks the answer, and in an interactive setting typically triggers a
+retry that consumes more energy than finishing would have. Stopping too
+late spends energy on text the user does not need. The decision is also not
+the same at every position. On memory-bandwidth-bound hardware, the energy required
+for a block of fixed length grows as the sequence gets longer because each
+token streams the entire current KV cache~\cite{sun2024shadowkv, zhang2026memory}. A fixed-confidence stopping policy assumes that generating more tokens always costs the same. But in longer contexts, later tokens can use more energy, so this policy may not remain accurate when accounting for energy use.
+
+\subsection{Constrained optimal stopping}
+
+
+At each point where the model could stop, generation
+continues only if the expected benefit of the next piece of text exceeds
+the energy cost of producing it; otherwise, generation stops.
+
+Formally, let $Q(t)$ be the expected task quality if generation stops at
+boundary $t$, let $e(t)$ be the energy in joules required for the next
+block, and let $b=(E_{\max}, M_{\max})$ denote the device's energy and
+memory budget. Our goal is to find a stopping time $\tau$ that solves the problem
+\begin{equation}
+\max_\tau \; \mathbb{E}[Q(\tau)]
+\quad \text{s.t.} \quad
+\textstyle\sum_{t\le\tau} e(t) \le E_{\max}, \qquad M(\tau) \le M_{\max}.
+\end{equation}
+
+Relaxing the energy constraint with a Lagrange multiplier motivates a
+per-boundary rule in which both sides are expressed in quality units:
+\begin{equation}
+\label{eq:stoprule}
+\text{stop at the first allowed } t
+\text{ such that } \dq(t) < \lambda(s)e(t).
+\end{equation}
+
+Here, $\dq(t)$ represents the predicted quality gain from continuing
+(see Section~\ref{sec:signal}).  $e(t)$ is the measured or modeled energy
+cost of the next block. Autoregressive decode is memory-bandwidth-bound
+and repeatedly accesses the growing KV cache~\cite{maliakel2025dvfs},
+which motivates accounting for context length in the energy model. The term $\lambda(s)$ is a
+joules-to-quality exchange rate that adjusts based on the device state $s$, including factors like battery tier and thermal headroom.
+
+The controller now includes a memory limit, $M_{\text{max}}$, as an
+extra condition. The controller checks this limit along with the
+price-based rule (see line 9 of Algorithm~\ref{alg:controller}).
+Generation stops if either the price-based condition is met or the
+device budget is exceeded, so in principle a budget violation always
+stops generation regardless of the price-based comparison. Our current
+implementation uses a fixed maximum-token cap instead of a live,
+calibrated memory-budget check. Validating true $M_{\max}$ enforcement
+is left for future work.
+
+\subsection{Calibration and bounded degradation}
+We calibrate the exchange rate for each task family and device by sweeping  $\lambda$ on a validation set until a predefined quality tolerance is reached  following the calibrated-threshold methodology of CALM~\cite{schuster2022calm}. The battery state influences the rule through a precomputed schedule $\lambda(s)$. We adapt LASER's EMA-smoothed, tanh-bounded threshold adjustment to account for battery and thermal state. LASER uses this approach to bound threshold changes and reduce sensitivity to short-term load fluctuations~\cite{tang2026laser}. We further quantize $\lambda$ into a small number of operating tiers and enforce a quality floor using conformal prediction~\cite{vovk2005conformal}.  
+
+%% =====================================================================
+\section{The Sufficiency Signal}
+\label{sec:signal}
+
+\subsection{Why next-token entropy is the wrong signal}
+When next-token entropy is low, it means the model is confident about predicting the next token.
+However, this does not mean the rest of the text has no value, and the two can
+disagree. For example, right after generating ``\texttt{dim(living\_room,}'' the
+model is almost sure that the next token will be ``\texttt{30}'', so entropy
+is close to zero. However, stopping there would break the command.
+On the other hand, once the tool call is finished, the model may still be quite
+uncertain about which polite continuation to produce, so entropy is high,
+even though nothing of value remains to be said. From our observations,
+the two quantities are sometimes anticorrelated right at the boundaries that matter. This is consistent with the larger finding that token-level
+entropy conflates uncertainty over meaning with uncertainty over
+phrasing~\cite{farquhar2024semantic}.
+We began by considering an entropy threshold, but in this paper we use it
+only as a baseline for comparison against our proposed signal (Section~\ref{sec:estimators}).
+
+\subsection{Hindsight labeling}
+\label{sec:labeling}
+Measurability of quality is needed only offline, when labels are created.
+For each of the $N$ prompts that have clear, checkable success criteria, we let the model generate text until it naturally finishes. We then record this representation at every valid stopping point. For each boundary $t$, we score
+the output that is cut off at $t$ by comparing it to the ground truth, and label the
+boundary with the actual quality difference $\Delta Q(t)$ between
+stopping at that point and decoding to completion. In the example above, every boundary at or after the completed tool call
+receives $\Delta Q = 0$, indicating that stopping at that point causes no
+loss in task quality. In contrast, a boundary that truncates the tool call
+before completion receives the maximum penalty. This labelling procedure
+requires no human annotation.
+
+\subsection{Three estimators}
+\label{sec:estimators}
+We introduce three candidate methods for estimating $\dq$: S1, S2 and S3. S1 and S3
+are compared empirically in our experiments, and an empirical
+evaluation of S2 is left for future work.
+The main estimator, S1, uses a probe with fewer than one million parameters.
+It reads a representation of the frozen model's internal state at the
+boundary, obtained via llama.cpp's \texttt{/embeddings} endpoint, and
+predicts a probability estimate of $\Delta Q(t)$. The probe is designed to add little computational overhead relative to continued decoding. The second method, S2,  is an agreement signal that adapts
+the answer-convergence stopping method~\cite{liu2025answerconv,fu2025dynasor} for
+single-pass streaming. For our adaptation, a small draft model~\cite{leviathan2023speculative} completes the answer, and agreement between the draft completion and the current answer provides evidence that further generation is unlikely to change the result. S3 is the
+entropy-and-boundary-feature heuristic. We keep this as an ablation to measure
+the benefit of the learned signals compared to this simple method.
+Unlike DEER's trial answers, S1 and S3 do not require additional decoded tokens from the main model to make a decision; S2 uses a short auxiliary completion from the draft model. When a stop is triggered, the decoder is allowed a short landing of up to $k$ tokens, with logits biased toward the end of the sequence~\cite{liu2025answerconv}. This reduces the risk of ending the generation in the middle of a grammatical or syntactic unit.
+
+\subsection{Scope and fail-open behavior}
+\label{sec:scope}
+This study focuses only on tasks where the outputs can be verified.
+In open-ended generation, there is generally no mechanically checkable
+ground truth from which hindsight labels can be constructed. This means
+that a probe trained on one distribution should not automatically be
+trusted outside that context. As a result, the controller is designed to
+fail open. If the probe's confidence is low, early stopping is turned off
+and the model continues decoding as usual. In this case, no energy is saved,
+but the model falls back to normal decoding.
+
+Section~\ref{sec:e3} directly tests this behavior using held-out, open-ended prompts. The probe might still produce confident predictions for some of these prompts. To evaluate fail-open safety, we do not consider only the stop rate.
+Instead, we check whether stopped outputs remain complete and coherent rather than being cut off prematurely. If the controller fails, for example due to a probe timeout, the system defaults to continued generation, allowing the request to complete normally rather than terminating it or causing a crash.
+
+%% =====================================================================
+\section{Memory Accounting and System Architecture}
+\label{sec:memory}
+
+\subsection{What stopping saves, and what it does not}
+At first, early stopping may seem mainly like a way to save memory, and that
+is how we initially described it. The numbers do not support this claim.
+For a Llama-3.2-3B-class model with grouped-query attention, 8 KV heads,
+a head dimension of 128, and 28 layers~\cite{llama32config}, ...the FP16 KV cache requires approximately 112\,KiB per token. If you stop 60 output
+tokens early with an 8{,}000-token input, you avoid about 0.7\% of the
+final cache footprint.
+
+The main benefit of stopping early is that it saves energy and reduces
+latency. Each skipped decode step avoids another model evaluation, including
+weight access and attention over the existing KV cache. Relief for memory
+on long contexts comes instead from KV-cache management and
+eviction~\cite{xiao2024streamingllm,zhang2023h2o}, which we regard as a
+complementary component under the same budget vector. Building the joint
+controller is left to future work (Section~\ref{sec:conclusion}).
+
+\subsection{Controller}
+Algorithm~\ref{alg:controller} gives an overview of the control loop.
+The implementation acts as a wrapper for the streaming and logit-processor interfaces
+of llama.cpp~\cite{llamacpp}. The base model remains unchanged and is not retrained. 
+
+\begin{algorithm}[t]
+\caption{Budget-aware stopping controller}
+\label{alg:controller}
+\begin{algorithmic}[1]
+\State $\lambda \gets \Lambda(\text{battery tier}, \text{thermal})$
+\Comment{precalibrated schedule}
+\For{each generated block}
+  \If{not admissible boundary} \textbf{continue} \EndIf
+  \State $\dq \gets \text{probe}(\text{hidden state})$
+  \If{probe confidence low} \textbf{continue} \Comment{fail open} \EndIf
+  \State $e \gets \text{EnergyModel}(\text{context length}, \text{DVFS})$
+  \If{$\dq < \lambda\, e$ \textbf{or} budget exceeded}
+     \State graceful\_close($k$); \textbf{break}
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{SystemOverview.eps}
+    \caption{Overview of the proposed energy-aware stopping system.}
+    \label{fig:system_architectur}
+\end{figure*} 
+Figure~\ref{fig:system_architectur} summarizes the complete workflow of the proposed energy-aware stopping system. Verifiable offline tasks create hindsight labels, train the lightweight probe, and calibrate the stopping parameters based on quality, battery, and thermal conditions. Online, the base LLM generates normally while the controller checks valid stopping boundaries. At each boundary, the probe estimates the probability of useful quality gain, and the energy model estimates the cost of continued decoding. The controller then decides whether to continue or stop according to the energy-aware threshold and device budget. If the probe is uncertain or unavailable, the system fails open and continues normal decoding; otherwise, a stop decision is followed by a short controlled termination phase before returning the final response.
+
+
+\section{Experimental Evaluation}
+\label{sec:eval}
+
+\subsection{Setup}
+\textbf{Hardware.} We used a Raspberry Pi 5 with 8 GB of RAM and an active cooler, powered
+by a wall supply for all experiments except the battery-drain
+deployment (see Section~\ref{sec:e3}), which used a second device for reasons
+explained in that section. We sampled board-level power at 20 Hz from the Pi's onboard power
+management IC using the command \texttt{vcgencmd pmic\_read\_adc}, and
+cross-checked the results with an inline USB power meter. Figure~\ref{fig:setup-apparatus} shows the measurement setup. All energy figures in this paper are reported in joules, measured
+directly on the physical device, not estimated.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{setup_1.png}
+\caption{The Raspberry Pi 5 measurement setup used for all experiments
+except the battery-drain deployment (Section~\ref{sec:e3}). This includes wall power
+supply, an inline USB power meter (FNIRSI FNB48S), and the Pi 5 with
+its active cooler.}
+\label{fig:setup-apparatus}
+\end{figure}
+
+\textbf{Models.} Llama-3.2-1B-Instruct, quantized to 4-bit (Q4\_K\_M) and
+served with llama.cpp~\cite{llamacpp}. This paper evaluates one model. Testing other model families and sizes will be explored in future work.
+
+\textbf{Tasks and dataset construction.} We evaluate smart-home command parsing using a synthetic dataset of 333
+commands that we generated programmatically and release with this work.
+The dataset covers seven device types and six rooms. 100 commands
+include self-corrections, such as ``turn off the lights... actually, dim
+them to 25\%.'' In these cases, the corrected command is used as the ground
+truth. We evaluate this dataset as a preliminary experiment in
+Section~\ref{sec:e0}.
+
+In addition, we created two QA datasets for this project and release both with the paper.
+The first contains 304 factual questions with accepted answer strings.
+It is used only for the preliminary experiment in
+Section~\ref{sec:e1prelim}.
+
+After this experiment, we found that unsafe stopping points appeared mainly
+in longer answers. Therefore, we created a second dataset with 1{,}074
+questions, generated
+by template scripts with a fixed random seed for reproducibility. It contains 40\% factual questions and 60\% explain-why
+questions. For For factual questions, correctness is checked using accepted
+answer strings. For explain-why questions, an answer is considered correct
+if it contains all required concept keywords. This second dataset is used
+for the signal-validation experiments in Section~\ref{sec:e1} and for all
+later experiments.
+
+We also use a subset of SAMSum~\cite{gliwa-etal-2019-samsum} for structured summarization. A separate
+held-out set of open-ended prompts is used only to evaluate fail-open
+behavior in Section~\ref{sec:e3}.
+
+\textbf{Baselines.}
+We compare our proposed model to three baselines. The first baseline allows normal generation to continue until the model reaches its natural end-of-sequence token. The second baseline, called the tuned \texttt{max\_tokens} baseline, uses a fixed output-length limit that is set separately for each task. The third baseline, called the entropy-threshold baseline, stops generation when the next-token entropy drops below a tuned threshold.
+
+\subsection{Preliminary measurement: command parsing (E0)}
+\label{sec:e0}
+We ran two small measurement tests on the Pi before building the full controller. In both experiments, we let the model answer without a length limit while measuring its energy use. We then measured how many extra tokens it generated after the correct answer was already complete, and how much energy those extra tokens consumed. The first experiment used the 333 smart-home commands. The system prompt included a few examples showing the model how to return only the required tool call. The model produced the
+exactly correct call in 198 of 333 cases (59.5\%). In every one of
+those correct responses, generation stopped at the tool call. There was
+nothing left over to trim. The prompt told the model to return only the tool call. As a result, the model usually stopped immediately after producing the correct command, leaving little extra text for an early-stopping method to remove. This is a useful result on its own. It
+shows that for tasks with a rigid, checkable output format, a well-written
+prompt can do the job our controller is meant to do, at no runtime cost at
+all. This also shows that this task is not the right place to look for
+evidence about whether adaptive stopping matters, so the rest of the paper focuses
+on other cases.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{fig_length_hist.pdf}
+\caption{Distribution of response lengths on the 304-question open-ended
+QA set used in Section~\ref{sec:e1prelim}.}
+\label{fig:length-hist}
+\end{figure}
+
+\subsection{Preliminary measurement: open-ended factual questions (E1-prelim)}
+\label{sec:e1prelim}
+The command task, presented in the previous subsection, did not allow the model to elaborate, so we repeated the measurement. This time, we used a task with 304 short factual questions, such as world
+capitals, historical dates, basic science, and similar topics. Each question had a list
+of acceptable answers and was answered using an open system prompt that
+only requested a clear and correct answer. Figure~\ref{fig:length-hist} shows response length varied
+considerably across the set, from single
+short factual replies to answers running well past the point of
+diminishing returns. Of the 304 responses, 291
+(95.7\%) contained the correct answer. 
+
+In this experiment, measurements were different.
+Correct responses generated an average of 8.2 extra tokens after the
+answer was already complete, with one response producing 155 extra tokens.
+Across the 291 correct responses, this resulted in 2{,}388 unnecessary
+tokens and about 1{,}348\,J of extra energy. In comparison, the smart-home
+command task produced no extra tokens after the correct command was generated as shown in Figure~\ref{fig:waste-comparison}. We repeated the experiment three times at temperature 0. The token counts
+were identical across all 304 questions in every run, while the total energy
+measurements differed by only about 1\,J. This shows that the observed extra
+generation is repeatable and provides a clear motivation for an early-stopping
+mechanism.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{fig_waste_comparison.pdf}
+\caption{Average tokens generated after the earliest safe stopping point,
+compared across the command-parsing task (E0, Section~\ref{sec:e0}) and
+the open-ended QA task (E1-prelim, this section). Command parsing under
+format-anchored prompting leaves nothing to trim; open-ended QA does.}
+\label{fig:waste-comparison}
+\end{figure}
+
+We also checked whether next-token entropy, the obvious first thing to
+try, is good enough on its own. We compute entropy from the model's full next-token probability
+distribution before it chooses the next token. Entropy does provide some
+useful information. As we change the stopping threshold, precision stays
+high at about 0.96--0.97, while recall increases from 0.31 to 1.00 as shown in Figure~\ref{fig:entropy-roc}. With a cautious threshold, the method finds
+only about one-third of the safe stopping points. With a more permissive
+threshold, it finds all safe stopping points, but it also produces more
+false positives. This is generally consistent with previous work showing
+that entropy over a restricted candidate-answer distribution, rather
+than the full next-token vocabulary, can serve as an effective stopping
+signal~\cite{haltcot}. Our own baseline tests the harder, i.e., full-vocabulary case.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\linewidth]{fig_entropy_roc.pdf}
+\caption{Precision and recall of an entropy-threshold stopping rule on
+E1-prelim, swept across threshold values. Precision stays near
+0.96--0.97 throughout; recall rises from 0.31 to 1.00 as the threshold
+is relaxed.}
+\label{fig:entropy-roc}
+\end{figure}
+
+The token-level trajectories behind this curve are presented in
+Figure~\ref{fig:entropy-trace}. Entropy is low through confidently
+generated phrasing in the middle of a sentence, and rises again near
+sentence starts and endings, which is exactly where a stopping decision
+needs to be made.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_entropy_trace.pdf}
+\caption{Per-token entropy trajectories for two example responses from
+the E1-prelim set, showing higher entropy near sentence starts and
+endings and lower entropy through confidently generated phrasing.}
+\label{fig:entropy-trace}
+\end{figure}
+
+\subsection{A larger, harder open-ended set (E1-prelim V2)}
+\label{sec:e1v2}
+We faced an unforeseen issue with the 304-question set.  Most answers in the 304-question dataset were one sentence, so there were few challenging stopping points. Fewer than 20 labeled boundaries were unsafe. This limited number of unsafe cases was not enough for a reliable precision-recall analysis and made it hard to fairly evaluate the entropy baseline.
+
+So we built a second, larger question set. It contains 1{,}074 questions, 434
+factual (same style as before) and 640 explain-or-why questions ("what
+causes X", "explain how X works"). These types of questions are chosen because they tend to produce
+longer answers with real stopping decisions throughout, not just at the
+end. The 60/40 split was selected to reflect where unsafe stopping points are most common
+as identified earlier, instead of following a standard ratio from
+previous studies.
+
+Out of 1,074 responses, 880 were correct, which is 81.9\%. For factual
+questions, 94.9\% were answered correctly. For explain questions,
+73.1\% were answered correctly. The lower accuracy on explain-why questions is partly due to how these
+answers are evaluated. An explain answer is counted as correct only when
+all required concepts appear in the response. Our first implementation used
+simple substring matching, which sometimes marked correct answers as
+incorrect when the model used a different form of the same word, such as
+``align'' instead of ``alignment.'' We therefore updated the matcher to
+recognize these word-form variations for explain questions, while keeping
+exact matching for factual answers. This correction affected only 116 of 3{,}623 boundaries labeled unsafe
+in the first pass; after correcting them, 3{,}507 remained genuinely
+unsafe, the number reported above.
+
+The larger dataset also showed much more unnecessary generation. Across
+the 880 correct responses, the model generated an average of 182.3 extra
+tokens after the earliest safe stopping point, with a maximum of 716 extra
+tokens in one response. In total, this produced 160{,}406 unnecessary
+tokens and about 89{,}268\,J of additional energy, with power data
+covering all 880 responses as shown in Figure~\ref{fig:v2-waste-by-type}.
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{fig_v2_waste_by_type.pdf}
+\caption{Average tokens wasted after the earliest safe stopping point,
+factual versus explain-type questions, on the 1{,}074-question set.}
+\label{fig:v2-waste-by-type}
+\end{figure}
+
+More importantly, the larger dataset provides a much stronger test of the
+proposed stopping signal. It contains 13{,}568 boundaries from multi-sentence
+responses, including 3{,}507 unsafe stopping points, compared with fewer
+than 20 in the original dataset.
+
+Figure~\ref{fig:v1-vs-v2-entropy} shows the difference clearly. On the
+larger dataset, precision is about 0.75--0.78, compared with 0.96--0.97
+on the smaller dataset, while recall still increases from about 0.34 to
+1.00 as the threshold becomes more permissive. We therefore consider the
+results from the larger dataset more representative. The smaller dataset
+contained too few difficult stopping points to properly evaluate the
+entropy signal.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{fig_v1_vs_v2_entropy.pdf}
+\caption{Entropy-threshold precision-recall on the original 304-question
+set versus the larger 1{,}074-question set. The larger set's much bigger
+supply of genuinely unsafe boundaries (3{,}623 versus under 20) reveals a
+meaningfully lower precision ceiling for entropy than the smaller set
+suggested.}
+\label{fig:v1-vs-v2-entropy}
+\end{figure}
+
+This also gives us a more reliable target for the learned probe in
+Section~\ref{sec:signal}. The larger dataset contains 3{,}623 unsafe
+examples, enough to train and evaluate the probe properly. In this setting,
+the entropy baseline achieves about 0.75 precision, which provides a
+more realistic comparison point than the higher value observed on the
+smaller dataset.
+
+Entropy is therefore a useful stopping signal, but it is not sufficient on
+its own. The next question is whether the learned probe in
+Section~\ref{sec:signal} can improve on this baseline by identifying more
+safe stopping points at the same precision. We evaluate this comparison in
+Section~\ref{sec:e1}.
+
+\subsection{E1: Signal validity}
+\label{sec:e1}
+This experiment builds on Sections~\ref{sec:e1prelim} and~\ref{sec:e1v2}.
+It tests whether the learned probe (S1) outperforms the entropy baseline (S3).
+On the 13,568-boundary v2 dataset, S3 achieves a precision
+of about 0.75 to 0.78 across its recall range, i.e., a meaningful bar, given the
+larger dataset's much bigger supply of genuinely unsafe boundaries. We use this as the
+main baseline that S1 must improve on.
+
+We trained S1, a probe with fewer than 200{,}000 parameters, using a
+representation of the frozen model's internal state at each stopping
+boundary, obtained via llama.cpp's \texttt{/embeddings} endpoint.
+We sampled 4{,}518 boundaries from the v2 dataset and split them into
+70\% training, 15\% validation, and 15\% test data. Boundaries from the
+same response were always kept in the same split to avoid data leakage.
+
+We repeated the experiment five times using different random seeds.
+For each run, the validation set was used for model selection and the
+test set was used only for final evaluation. Across the five runs, S1
+achieved an average precision of 0.890 with a standard deviation of
+0.045. Individual runs ranged from 0.833 to 0.964, evaluated on test
+sets of 693 to 779 boundaries containing 132 to 234 actual unsafe
+cases.
+
+Across all five random seeds, the learned probe performed better than the
+entropy baseline. As shown in Figure~\ref{fig:probe-v2-vs-entropy}, the probe
+maintains about 0.85--0.90 precision across most of the recall range, while
+entropy remains around 0.75--0.78. The probe curve is above the entropy curve
+for almost the entire range, showing a consistent improvement. Also, average precision summarizes the full precision--recall curve, so it is not
+the same as precision measured at a single recall value. We therefore use
+the curves in Figure~\ref{fig:probe-v2-vs-entropy} for the direct comparison.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\linewidth]{fig_probe_v2_vs_entropy.pdf}
+\caption{Precision-recall curves for the learned probe (S1) against the
+entropy baseline (S3) on the v2 dataset. The bold blue line is the
+best-validation-AP seed; the five faint blue lines are the other four
+seeds, showing the result is not the product of one favorable split.}
+\label{fig:probe-v2-vs-entropy}
+\end{figure}
+
+This result suggests that the learned probe captures information that is not
+available from entropy alone. We had previously tested a smaller pilot probe
+using 447 boundaries from the original 304-question dataset, where its
+performance looked similar to entropy. However, that test set contained only
+four unsafe examples, which was too small for a reliable comparison. In the larger experiment, each test split contains hundreds of unsafe
+examples, and the probe consistently performs better than entropy. We
+therefore consider this larger result to be the more reliable comparison.
+
+\subsection{E2: Quality against measured energy}
+\label{sec:e2}
+We implemented the controller from Section~\ref{sec:memory} on the
+Raspberry Pi using the trained probe from Section~\ref{sec:e1}. The probe
+weights were exported to NumPy so that no scikit-learn or PyTorch runtime was
+needed on the device. During generation, the controller queried llama.cpp's
+\texttt{/embeddings} endpoint at each admissible sentence boundary and used
+the returned representation to decide whether to stop or continue.
+
+Our first implementation did not save energy. In fact, it consumed slightly
+more energy than allowing the model to generate each response to completion.
+A latency test showed why. Calls to \texttt{/completion} benefited from the
+server's prompt cache, so their latency stayed roughly stable as the context
+grew. Calls to \texttt{/embeddings}, however, became slower as the response
+became longer, indicating that the text was being reprocessed at each
+boundary check. As a result, repeatedly checking long responses became expensive. Some
+responses required more than a dozen boundary checks, and the energy spent on
+those checks was large enough to cancel the savings from early stopping.
+
+To reduce the overhead of repeated boundary checks, we evaluated the probe
+at every second sentence boundary instead of every boundary. This roughly
+halved the number of expensive \texttt{/embeddings} calls. On the full 1{,}074-question dataset, the controller answered 789 questions correctly (73.5\%), compared with about 82\% accuracy when generation was
+allowed to finish normally. It stopped early on 590 responses (54.9\%). 
+
+The measured energy use was 146{,}313.55\,J with the controller, compared
+with 246{,}665.86\,J without early stopping, giving a 40.7\% reduction
+as shown in Figure~\ref{fig:e2-controller-vs-baseline}. These values come directly
+from the recorded power traces, integrated over each response's real
+timestamps, the same method used for every other energy figure in this
+paper, and include the energy cost of running the controller itself. An earlier estimate based only on the amount of generated text suggested
+a larger saving of about 69\%. However, that estimate ignored the overhead
+of the stopping mechanism. The difference shows that controller overhead
+is significant and should be included when reporting the real energy
+benefit.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_e2_controller_vs_baseline.pdf}
+\caption{Measured energy and task accuracy for the live controller
+against the no-stopping baseline, on the same 1{,}074 questions. Energy
+is integrated from a real power trace over each response's actual
+timestamps; accuracy is computed with the same checker used throughout
+this paper. The controller trades 8.4 percentage points of accuracy
+for a 40.7\% reduction in measured energy.}
+\label{fig:e2-controller-vs-baseline}
+\end{figure}
+
+To compare our controller with simpler alternatives, we also evaluated a
+fixed \texttt{max\_tokens} limit and an entropy-threshold baseline on the
+same 1{,}074 questions. We used the boundary-level data already collected
+in Section~\ref{sec:e1v2}, so no additional Raspberry Pi runs were needed.
+All methods were evaluated at sentence boundaries. For the \texttt{max\_tokens} baseline, increasing the token limit improved
+accuracy but also increased energy use. Across limits from 30 to 500 tokens,
+accuracy increased from 46.1\% at 57.3\,kJ to 81.7\% at 238.0\,kJ, close
+to the no-stopping result of 81.9\% at 246.7\,kJ. Figure~\ref{fig:e2-frontier}
+shows this alongside the entropy baseline and our controller's single
+operating point.
+
+The entropy baseline used much less energy, but its accuracy was lower.
+Across the tested thresholds, energy use stayed below 66.4\,kJ, while
+accuracy fell from 52.0\% down to 42.4\% as the threshold was relaxed.
+This is consistent with the earlier result that entropy alone has limited
+precision and can stop too early. As a result, it does not reach the
+accuracy of either a generous token limit or our controller.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\linewidth]{fig_e2_frontier.pdf}
+\caption{Accuracy against total measured energy, 1{,}074 questions: our
+controller against a swept fixed \texttt{max\_tokens} budget and a
+swept entropy threshold. The controller's operating point sits above
+the \texttt{max\_tokens} curve at comparable energy (roughly 65--70\%
+accuracy interpolated at 146\,kJ, against the controller's 73.5\%), and
+above the entire achievable range of the entropy baseline, which never
+reaches this accuracy level regardless of threshold.}
+\label{fig:e2-frontier}
+\end{figure}
+
+Our controller performs better than the \texttt{max\_tokens} baseline at
+a similar energy level. At about 146.3\,kJ, the \texttt{max\_tokens} curve
+gives roughly 65--70\% accuracy, while our controller reaches 73.5\%.
+The controller also performs better than the entropy baseline, which never
+reaches 73.5\% accuracy at any tested energy level. This shows that the
+controller provides a better energy--accuracy trade-off than the two
+simpler baselines, not just at a single point but across a comparable
+range of the swept alternatives' own operating curves, which is the stronger standard this section set out to meet.
+
+We did not include DEER-style confidence stopping or LASER's
+load-responsive threshold as empirical baselines because they solve a
+different problem. DEER decides whether to stop reasoning before the
+model has written any answer at all, while our method decides whether
+to keep going once the answer has already started. LASER has the same
+mismatch, plus one more: it reacts to how busy a shared server is,
+while our method reacts to a single device's own battery level. We
+discuss both methods as related work in Section~\ref{sec:related}
+instead of forcing them into a comparison that wouldn't really be fair
+to either one.
+
+\subsection{E3: Battery drain and fail-open behavior}
+\label{sec:e3}
+For this test, we used a Raspberry Pi 4 (4GB) instead of the Pi 5 we
+used everywhere else in the paper. The Pi 5 needs up to 5V/5A of power
+when it is working hard. Our battery pack -- a 20{,}000mAh USB-C power
+bank -- can only give 5V/3A per port, which was not enough for the Pi
+5. The Pi 4 only needs 5V/3A, so it worked fine on this same pack.
+Figure~\ref{fig:e3-apparatus} shows the setup we used. This was just a hardware limit, not something we chose on purpose. Because
+of this, the power numbers in this section are for the Pi 4, not the Pi
+5, and should not be compared directly with the Pi 5 numbers in
+Sections~\ref{sec:e1v2}--\ref{sec:e2}.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.7\linewidth]{setup_2.png}
+\caption{The physical setup for this experiment: a network router
+provides the Ethernet connection; the Raspberry Pi 4 (with active
+cooler and a USB flash drive for logging) is powered through an
+inline USB power meter, which is in turn powered by the battery pack
+shown at 99\% charge.}
+\label{fig:e3-apparatus}
+\end{figure}
+
+
+The controller ran the whole time without stopping, working through
+the same list of 1{,}074 questions and set to start over from the
+beginning if it ever finished the list. It used the same threshold we
+had already tested (0.99, checking every second sentence) from
+Section~\ref{sec:e2}. We started with a full battery and let it run
+until the device lost power completely, i.e., it answered 306 questions
+in total before that happened, so it never made it through the whole
+list once. Figure~\ref{fig:e3-drain} shows the battery level and how
+many questions were answered over this whole time.
+
+We measured power with a separate USB power meter (an FNIRSI FNB48S)
+plugged into the data line, not using anything built into the Pi. We
+did this because the Pi 4, unlike the Pi 5, does not have its own
+power sensor built in. 
+
+The power meter's logging software crashed four times during the run.
+This is a known problem with the driver we used, since it was not made
+by the meter's own company. Each time it crashed, we restarted it, and
+you can see these gaps in Figure~\ref{fig:e3-power}. One of these gaps
+covers the last 26 minutes before the device ran out of power, so our
+last power reading (15:02) is a bit earlier than when the device
+actually stopped (15:28, based on the last question it answered). None
+of this affected the actual list of questions and answers, which kept
+running the whole time without any interruption.
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{fig_e3_battery_drain.pdf}
+\caption{Battery charge and cumulative interactions completed over the
+full drain, Raspberry Pi 4. Charge is read directly from the battery
+pack's own display at each check-in (sparse, not continuous); the
+discharge curve visibly steepens in the final hour, a real and
+expected battery effect rather than a change in system behavior.}
+\label{fig:e3-drain}
+\end{figure}
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{fig_e3_power_trace.pdf}
+\caption{Measured power draw (voltage $\times$ current) across the three
+logging segments of the battery drain. Gaps between segments are logger
+crashes (a known limitation of the USB power meter's reverse-engineered
+driver), not power interruptions to the device; the interaction log ran
+uninterrupted throughout, including across these gaps.}
+\label{fig:e3-power}
+\end{figure}
+
+\textbf{Interactions per charge.} The device answered \textbf{306
+questions} on one battery charge, from 07:12 to about 15:28 (8.3
+hours). Figure~\ref{fig:e3-drain} shows the battery level over time,
+along with how many questions had been answered so far. The battery
+level dropped at a steady rate for about six hours. Then it dropped
+much faster: the last 15\% on the screen was gone in under 40 minutes.
+We got the charge level from the battery pack's own screen, not from a
+separate sensor, so we cannot say for sure if this faster drop was a
+real change in energy use, or just how the pack's screen shows charge
+near empty. Either way, it was not caused by our controller, i.e.,  the
+controller worked the same way the whole time.
+
+\textbf{Measured power draw.} The crashes split our power log into
+three separate parts. In each part, the average power was almost the
+same: 7.29W, 7.30W, and 7.30W. This is a strong result, since these
+three parts were measured hours apart and cover most of the battery
+drain. It shows the controller kept working the same way the whole
+time, even though the battery's own screen showed a faster drop near
+the end. Figure~\ref{fig:e3-power} shows the full power trace. The
+peaks and dips in the graph are real, i.e., they happen because the model
+is actively writing text, not because of noise in the measurement.
+
+
+
+
+
+\textbf{Fail-open on out-of-distribution prompts.} We also tried ten
+creative, open-ended prompts -- poems, short stories, made-up recipes
+-- nothing like what the probe had seen before. We ran these while the
+battery was already low (27\%), with the main test still running on
+the same device.
+
+The clearest result here is about fail-open itself. During this test,
+several boundary checks failed completely because of the extra load on
+the device -- visible in the console output as repeated probe errors.
+Every single time this happened, the controller did exactly what it
+was designed to do: it kept generating instead of stopping. This is a
+real, direct test of the fail-open rule under genuine stress, and it
+worked every time.
+
+The probe's own confidence signal is a different story, and this is a
+real weakness. It stopped early on 5 of the 10 prompts, even though
+all of them were things it had never been trained on. So the probe
+cannot reliably tell when it is looking at something unfamiliar -- it
+was wrong, or at least too confident, about half the time on exactly
+this kind of input.
+
+By hand, we checked all ten outputs and found none of them looked
+broken or cut off, including the five that stopped early. But ten
+prompts is a very small sample, and this check was done by eye, not
+with a formal test. So this should be read as an early, promising sign,
+not proof that the system is safe on unfamiliar input in general.
+
+To sum up, the device ran the whole time on battery power without
+failing, power stayed steady throughout, and the fail-open rule worked
+every time it was needed -- the one weak spot is that the probe itself
+cannot always tell when it's facing something outside its training.
+
+\subsection{E4: Overhead accounting}
+In this section, we report three real costs: how expensive the probe itself is to
+run, how expensive it is to get the information the probe needs, and
+how much one-time setup work was needed before any of this could be
+used. We want the claim that our method is lightweight to be checked
+against real numbers.
+
+\textbf{Probe inference cost.} The trained probe has 135{,}297
+parameters in total (including the scaler used to standardize its
+input): a single hidden layer of 64 units, taking in the model's
+2{,}048-dimensional representation. It runs as a plain numpy
+calculation, with no need for scikit-learn or PyTorch. We timed it over
+20{,}000 calls and got 27.8 microseconds per call on average.
+
+Note that this timing was measured on a
+regular computer, not on the Raspberry Pi itself. The number of
+calculations the probe does is fixed by its size and does not change
+between machines, but how long those calculations actually take does
+depend on the hardware running them. The Pi's processor is likely
+slower per calculation than the machine we used, so the real number on
+the Pi could be higher than 27.8 microseconds. Even so, as the next
+part shows, the probe's cost is so small compared to everything else
+that this difference does not change our overall conclusion.
+
+\textbf{Boundary-detection cost.} The real cost of making a stopping
+decision is not the probe -- it is the \texttt{/embeddings} call needed
+to get the information the probe reads in the first place. We measured
+this directly on the Pi (this is the same test described in
+Section~\ref{sec:e2}). This
+call's time grows as the response gets longer: about 374ms at 100
+characters, up to about 5{,}715ms at 2{,}000 characters.
+
+Figure~\ref{fig:e4-overhead} shows both costs side by side on a log
+scale. Even at the shortest length we tested, the \texttt{/embeddings}
+call takes about ten thousand times longer than the probe. At longer
+lengths, it is closer to a hundred thousand times longer. Compared to
+this, the probe's own cost is negligible. This also explains why
+checking every second boundary instead of every boundary helped in
+Section~\ref{sec:e2}: it cut the number of these slow
+\texttt{/embeddings} calls in half. It did not make the probe itself
+any cheaper -- the probe was never the expensive part.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{fig_e4_overhead.pdf}
+\caption{Per-decision cost, log scale. The probe's own calculation
+(27.8 microseconds, measured on general-purpose hardware) is
+negligible compared to the \texttt{/embeddings} call needed to feed
+it, which grows with response length and takes seconds at longer
+lengths -- roughly ten thousand to a hundred thousand times longer
+than the probe at every length we tested.}
+\label{fig:e4-overhead}
+\end{figure}
+
+\textbf{One-time calibration cost.} No part of the base language model
+is fine-tuned in this work. The probe is trained once, offline, before
+deployment, as described in Section~\ref{sec:e1}. Separately, the
+fixed threshold used throughout Sections~\ref{sec:e2}--\ref{sec:e3}
+(0.99) also needed a one-time calibration pass to choose it: three
+small tests of 30 questions each at candidate thresholds (0.8, 0.9,
+0.99), plus two larger checks of 100 questions each, since the smaller
+tests turned out not to give a reliable estimate of real accuracy (one
+larger check was at an early threshold of 0.7 that we later dropped,
+and one confirmed 0.99 as the final choice).
+
+Based on this phase's measured average of 29.6 seconds per question,
+this calibration work took about 2.4 hours in total. This is a real
+cost, but it is paid once, offline, before the system is ever used --
+not something repeated for every request or every new device. We think
+it is worth reporting plainly: probe training and threshold
+calibration are both real, one-time setup costs, even though no part
+of the base language model itself needs to be retrained.
+
+
+\section{Discussion and Limitations}
+\label{sec:limitations}
+
+Our method has several limitations. First, it works best for tasks where the answer can be checked and
+where the response length can naturally vary. For tasks with a fixed
+output format, good prompt design might already stop unnecessary
+generation on its own. We saw this in Section~\ref{sec:e0}, where the
+model usually stopped as soon as it gave the required command. In
+cases like this, there is little extra text left for our controller to
+remove.
+
+We also do not see open-ended generation as a main use case for the
+current system. As shown in Section~\ref{sec:e3}, the probe can still
+trigger on unfamiliar, open-ended prompts. The fail-open rule protects
+against technical failures, like a probe call timing out or returning
+an error -- the controller just keeps generating in those cases. But
+fail-open does not protect against the probe confidently making the
+wrong call on something unfamiliar. Handling unfamiliar prompts better
+is an important thing to work on next.
+
+For chain-of-thought tasks, where the real answer might only show up
+near the end of a long chain of reasoning, we do not use our
+sufficiency-based stopping rule. We only use a hard token limit
+instead. Making this method work for reasoning-heavy tasks would need
+a different kind of signal, and that is outside what we did here.
+
+Our design also allows the stopping rule to change based on battery
+level. For example, the system could use a slightly more aggressive
+threshold when the battery is low. But in every experiment we actually
+ran (Sections~\ref{sec:e2}--\ref{sec:e3}), we used one fixed threshold
+the whole time. So we are not claiming that battery-based adaptation
+has been tested. Checking how this would affect answer quality, energy
+use, and the user's experience is left for later work.
+
+Another limitation is that the probe is trained on one specific kind of
+data. It may not work as well on tasks, topics, or languages it did not
+see during training. Section~\ref{sec:e3} shows this is a real problem,
+not just a theoretical one. Future versions should include a better way
+to spot unfamiliar input before letting the probe make an early-stopping
+decision.
+
+Finally, this method is not meant for safety-critical outputs, like
+alerts, detection systems, or important data collection. We only use
+early stopping where a shorter answer is fine, and where stopping too
+early would not cause a real safety problem. 
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+We looked at when a language model running on an edge device should
+stop generating text, and turned this into an energy-aware stopping
+decision. Instead of just counting tokens, our method weighs the
+expected gain in quality against the real, measured energy cost. We
+also showed that next-token entropy on its own is not a reliable
+stopping signal here, and that a small trained probe gives a much
+better one.
+
+We tested the full system on real edge hardware, using directly
+measured power. On our 1{,}074-question test set, the controller cut
+measured energy use by 40.7\%, while getting 73.5\% of answers right,
+compared to about 81.9\% when the model was just left to finish
+generating on its own. We also found that most of the real runtime
+cost comes from getting the model's representation for the probe to
+read, not from the probe itself.
+
+There are several things worth doing next. One is combining our
+output-side stopping rule with input-side KV-cache
+compression~\cite{xiao2024streamingllm,zhang2023h2o}, so both are
+managed under one shared budget. Another is combining stopping with
+layer-wise adaptive
+computation~\cite{schuster2022calm,elhoushi2024layerskip}. We also
+want to actually test battery-adaptive thresholds, and compare our
+offline-trained probe against stopping policies learned through
+reinforcement learning. Finally, more work is needed to handle
+unfamiliar prompts better, and to check how well this works across
+different models, tasks, and languages.
+
+
+\section*{CRediT authorship contribution statement}
+\textbf{[AUTHOR NAME]:} Conceptualization, Methodology, Software,
+Validation, Formal analysis, Investigation, Resources, Data curation,
+Writing -- original draft, Writing -- review \& editing,
+Visualization, Supervision, Project administration.
+
+\section*{Declaration of competing interest}
+The authors declare no competing interests.
+
+\section*{Data availability}
+The synthetic command and QA datasets, hindsight-labeling scripts,
+controller implementation, and power traces are available at
+\url{https://github.com/toomanaa/edge-llm-stopping} and will be made
+public upon acceptance.
+
+\section*{Declaration of Generative AI and AI-assisted technologies in
+the writing process}
+During the preparation of this work, the author used Claude (Anthropic)
+to assist in creating the datasets used in this work. These tasks were directed and
+verified by the author. The author reviewed, edited, and takes full
+responsibility for the content of this publication.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{references}
+
+\end{document}
