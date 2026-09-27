@@ -112,20 +112,7 @@ reproduce the numbers reported so far.
   stays around 0.96–0.97 across a threshold sweep, recall climbs from
   0.31 to 1.00.
 
-## Citation
 
-If this repository or the accompanying paper is useful to you, please
-cite (details to be finalized on publication):
-
-```bibtex
-@article{TODO2026budgetaware,
-  title={Budget-Aware Optimal Stopping for On-Device {LLM} Generation:
-         Pricing the Continue-or-Stop Decision in Measured Energy},
-  author={TODO},
-  journal={Future Generation Computer Systems},
-  year={2026},
-  note={Under review}
-}
 ```
 
 ## License
