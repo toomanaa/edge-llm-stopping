@@ -1,7 +1,6 @@
 # Budget-Aware Optimal Stopping for On-Device LLM Generation
 
-Research project and lab notebook for a paper submitted to *Future
-Generation Computer Systems* (FGCS). We treat the "should the model keep
+Research project and lab notebook for a paper under review in which we treat the "should the model keep
 generating or stop now" decision as a budget-aware optimal stopping
 problem, priced in **measured joules** rather than token counts, on a
 Raspberry Pi 5.
