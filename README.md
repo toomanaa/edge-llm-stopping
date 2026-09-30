@@ -81,6 +81,15 @@ Then, on any machine, once you've copied the out/ folder over:
     python3 scripts/analysis/label_qa_boundaries.py --gen out/qa_gen.jsonl --power out/qa_power.csv --outdir out
     python3 scripts/analysis/make_figures.py
 
+## The battery test (a second device)
+
+The battery test was run on a **Raspberry Pi 4**, not the Pi 5 used
+everywhere else in this project. The Pi 5 needs more electrical current
+than our battery pack could reliably supply, so we used a Pi 4 for
+this one test instead. The steps are the same as above, just run on
+the Pi 4, with the controller left running on its own, on battery
+power, until the device ran out of power.
+
 ## Measuring power without extra hardware
 
 The Raspberry Pi 5 has a power sensor built in (called a PMIC), which
@@ -90,6 +99,9 @@ second and adds it up to get joules for any time period. This is what
 every measurement in this project is based on. You can also plug in an
 inline USB power meter (like an FNIRSI FNB48S) to double-check the
 built-in sensor, but this is optional.
+
+Note: the Raspberry Pi 4 does not have this built-in sensor. For the
+battery test, power was measured only with the inline USB power meter.
 
 ## License
 
