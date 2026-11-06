@@ -1,6 +1,8 @@
 # Data
 
 This folder has three datasets. All of them were built for this project.
+They contain questions and accepted answers only. Model outputs and power
+traces are produced by running the scripts in this repo.
 
 ## commands.jsonl
 
@@ -15,21 +17,23 @@ existing benchmark.
 
 Each line looks like this:
 
-    {"id": "cmd_0000", "utterance": "...", "ground_truth": "dim(bedroom, 25)", "family": "lights_dim", "has_correction": false}
+    {"utterance": "Could you dim the bedroom lights to 25% thanks", "ground_truth": "dim(bedroom, 25)", "family": "lights_dim", "has_correction": false, "id": "cmd_0000"}
 
 ## qa.jsonl (first QA set)
 
 304 short factual questions (world capitals, basic science, history,
 culture). Each question has a list of acceptable answers, so different
 ways of writing the same answer (like aliases) still count as correct.
-These were written by hand, not taken from a benchmark like TriviaQA or
-NQ-open, so there are no licensing limits on sharing them.
+These questions were curated by hand (static facts such as capitals,
+elements and authors) and written into a short script, so they are not
+taken from a benchmark like TriviaQA or NQ-open. There are no licensing
+limits on sharing them.
 
 This set was used for the first, preliminary QA experiment.
 
 Each line looks like this:
 
-    {"id": "qa_0000", "question": "What is the largest city in Japan?", "answers": ["tokyo"]}
+    {"question": "What is the largest city in Japan?", "answers": ["tokyo"], "id": "qa_0000"}
 
 ## qa_v2.jsonl (larger QA set)
 
@@ -51,11 +55,14 @@ experiments.
 
 Each line looks like this:
 
-    [PASTE ONE REAL LINE FROM qa_v2.jsonl HERE]
+    {"question": "Do you know the capital city of Romania?", "answers": ["bucharest"], "match_mode": "any", "type": "factual", "id": "qav2_0000"}
+    {"question": "What causes some clouds bringing rain and others not?", "answers": ["moisture", "altitude"], "match_mode": "all", "type": "explain", "id": "qav2_0001"}
+
+`match_mode` "any" means one accepted answer is enough. "all" means every
+listed concept must appear in the answer.
 
 ## Regenerating
 
-The QA v2 set was built by a short Python script with a fixed random
-seed, so it can be rebuilt exactly. The script is in
-`scripts/generators/`. The commands and first QA set were also built by
-short scripts, and the `id` order is fixed by the seed.
+All three sets were built by short Python scripts with fixed random
+seeds, so they can be rebuilt exactly. The scripts are in
+`scripts/generators/`.
