@@ -1,7 +1,5 @@
 # Lab notebook
 
-Chronological record of what was done, what broke, and how it was fixed.
-Kept in plain language on purpose — this is a working log, not the paper.
 
 ## Setup
 
