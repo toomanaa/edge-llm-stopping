@@ -9,21 +9,21 @@ energy), not just token counts, on a Raspberry Pi.
 
 Small language models on battery-powered edge devices often keep
 writing text even after they've already given a complete, correct
-answer. Every extra word costs real energy. Existing early-stopping
+answer. Every extra token costs real energy. Existing early-stopping
 methods (DEER, Dynasor, LASER) decide when to stop based on how
 confident the model is, or how busy a server is — not on the real
-energy state of the device paying for each word. This project builds
+energy state of the device paying for each token. This project builds
 and tests a stopping controller that uses real, measured energy
 instead.
 
 ## Headline results
 
 - **Command parsing:** 333 smart-home voice commands. 198 out of 333
-  (59.5%) were exactly correct, with zero extra words generated after
+  (59.5%) were exactly correct, with zero extra tokens generated after
   the correct command in any of them.
 - **Open-ended QA:** 1,074 questions (short factual questions plus
   explain/why questions). 880 out of 1,074 (81.9%) were correct.
-  Correct answers had, on average, 182.3 extra words generated after
+  Correct answers had, on average, 182.3 extra tokens generated after
   the answer was already complete.
 - **Learned probe vs. entropy:** our trained probe is better at
   spotting safe stopping points than a simple entropy-based baseline
@@ -47,9 +47,10 @@ tried, what broke, and how we fixed it.
     scripts/pi/            scripts that run ON the Raspberry Pi (generation, power logging, setup)
     scripts/analysis/      scripts that run on any machine (labeling, figure generation)
     scripts/generators/    dataset generation scripts (seeded, reproducible)
-    scripts/equivalence/   compares the model's outputs before and after quantization
+    scripts/equivalence/   compares the model's internal representations before and after quantization
     scripts/controller/    the live controller (probe export, real-time stopping)
-    data/                  datasets (smart-home commands, QA questions) with ground truth
+    scripts/probe_training_v2.ipynb   Colab notebook that trains the probe
+    data/                  datasets (smart-home commands, QA questions) with accepted answers
     figures/               generated plots
     docs/                  lab notebook and design notes
 
@@ -59,6 +60,8 @@ You will need: a Raspberry Pi (8 GB), any active cooler, and, if you
 want to double-check the Pi's own power sensor, an inline USB power
 meter (this is optional). No GPU is needed for the experiments in this
 repo; a free Colab GPU is used later, just for training the probe.
+
+Model: Llama-3.2-1B-Instruct, 4-bit (Q4_K_M), served with llama.cpp.
 
 On the Pi, once:
 
@@ -75,10 +78,20 @@ Then open three terminals on the Pi:
     python3 scripts/pi/run_command_generation.py --data data/commands.jsonl --out out/gen.jsonl
     python3 scripts/pi/run_qa_generation.py --data data/qa.jsonl --out out/qa_gen.jsonl
 
+For the larger 1,074-question set, replace step 3 with:
+
+    python3 scripts/pi/run_qa_v2_generation.py --data data/qa_v2.jsonl --out out/qa_v2_gen.jsonl
+
+Long runs can use a lot of memory. If the server's memory keeps growing,
+use `scripts/pi/run_qa_v2_generation_safe.py` instead. It works in small
+batches and pauses so you can restart the server, then resumes where it
+stopped.
+
 Then, on any machine, once you've copied the out/ folder over:
 
     python3 scripts/analysis/label_command_boundaries.py --gen out/gen.jsonl --power out/power.csv --outdir out
     python3 scripts/analysis/label_qa_boundaries.py --gen out/qa_gen.jsonl --power out/qa_power.csv --outdir out
+    python3 scripts/analysis/label_qa_v2_boundaries.py --gen out/qa_v2_gen.jsonl --power out/power.csv --outdir out
     python3 scripts/analysis/make_figures.py
 
 ## The battery test (a second device)
@@ -106,4 +119,6 @@ battery test, power was measured only with the inline USB power meter.
 ## License
 
 Code: MIT (see `LICENSE`). Data: released for research use; see
-`data/README.md` for where it came from.
+`data/README.md` for where it came from. The data folder contains the
+questions and accepted answers. Model outputs and power traces are
+produced by running the scripts above.
