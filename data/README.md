@@ -24,7 +24,7 @@ Each line looks like this:
 304 short factual questions (world capitals, basic science, history,
 culture). Each question has a list of acceptable answers, so different
 ways of writing the same answer (like aliases) still count as correct.
-These questions were curated by hand (static facts such as capitals,
+These questions were curated with AI assistance and checked by the authors (static facts such as capitals,
 elements and authors) and written into a short script, so they are not
 taken from a benchmark like TriviaQA or NQ-open. There are no licensing
 limits on sharing them.
